@@ -8,11 +8,11 @@ st.set_page_config(page_title="Simulador de Separação", layout="centered")
 st.title("🧪 Simulador de Separação de Produtos")
 
 # Parâmetros de entrada
-tempo_produto = st.number_input("⏱️ Tempo médio por produto (s)", value=20)
-tempo_deslocamento = st.number_input("🚚 Tempo entre estações (s)", value=5)
+tempo_produto = st.number_input("⏱️ Tempo médio por produto (s)", value=20.0)
+tempo_deslocamento = st.number_input("🚚 Tempo entre estações (s)", value=5.0)
 capacidade_estacao = st.number_input("📦 Capacidade máxima de caixas simultâneas por estação", value=10, min_value=1)
-pessoas_por_estacao = st.number_input("👷‍♂️ Número de pessoas por estação", value=1.0, min_value=0.0)
-tempo_adicional_caixa = st.number_input("➕ Tempo adicional por caixa (s)", value=0)
+pessoas_por_estacao = st.number_input("👷‍♂️ Número de pessoas por estação", value=1.0, min_value=0.01, step=0.1)
+tempo_adicional_caixa = st.number_input("➕ Tempo adicional por caixa (s)", value=0.0)
 
 # Upload do arquivo Excel
 uploaded_file = st.file_uploader("📂 Faça upload do arquivo Excel com os dados", type=["xlsx"])
@@ -44,11 +44,14 @@ if st.button("▶️ Iniciar Simulação"):
             df = df.sort_values(by=["ID_Pacote", "ID_Caixas"])
             caixas = df["ID_Caixas"].unique()
 
+            # Garantir que a coluna seja numérica e tratar valores inválidos
+            df["Contagem de Produto"] = pd.to_numeric(df["Contagem de Produto"], errors="coerce").fillna(0)
+
             # Estimar tempo por caixa (para ordenar entrada)
             estimativas = []
             for caixa in caixas:
                 caixa_df = df[df["ID_Caixas"] == caixa]
-                total_produtos = float(caixa_df["Contagem de Produto"].sum())
+                total_produtos = caixa_df["Contagem de Produto"].sum()
                 num_estacoes = caixa_df["Estação"].nunique()
                 tempo_estimado = (total_produtos * tempo_produto) / pessoas_por_estacao + (num_estacoes * tempo_deslocamento) + tempo_adicional_caixa
                 estimativas.append((caixa, tempo_estimado))
@@ -60,7 +63,6 @@ if st.button("▶️ Iniciar Simulação"):
             tempo_caixas = {}
             gargalo_ocorrido = False
             tempo_gargalo = None
-
             tempo_total_simulacao = 0  # maior tempo ao final de todas as caixas
 
             for caixa in caixas_ordenadas:
@@ -70,13 +72,12 @@ if st.button("▶️ Iniciar Simulação"):
 
                 for _, linha in caixa_df.iterrows():
                     estacao = linha["Estação"]
-                    contagem = float(linha["Contagem de Produto"])
-
+                    contagem = float(pd.to_numeric(linha["Contagem de Produto"], errors="coerce") or 0)
                     duracao = (contagem * tempo_produto) / pessoas_por_estacao + tempo_deslocamento
 
                     # Inicializar fila de disponibilidade por pessoa na estação
                     if not disponibilidade_estacao[estacao]:
-                        disponibilidade_estacao[estacao] = [0.0] * pessoas_por_estacao
+                        disponibilidade_estacao[estacao] = [0.0] * int(max(1, round(pessoas_por_estacao)))
 
                     # Escolhe a pessoa com menor tempo de disponibilidade
                     idx_pessoa_livre = disponibilidade_estacao[estacao].index(min(disponibilidade_estacao[estacao]))
@@ -143,10 +144,3 @@ if st.button("▶️ Iniciar Simulação"):
             st.error(f"Erro ao processar o arquivo: {e}")
     else:
         st.warning("⚠️ Por favor, envie um arquivo Excel para prosseguir com a simulação.")
-
-
-
-# Caso não processo os python execute esse comando no terminal "C:/Users/anderson.oliveira5/AppData/Local/Programs/Python/Python313/python.exe -m streamlit run "C:/Users/anderson.oliveira5/Downloads/Simulações/streamlit_simulador.py"
-# Correção botão baixar excel "pip install xlsxwriter"
-# para rodar no promp "streamlit run streamlit_simulador.py"
-
