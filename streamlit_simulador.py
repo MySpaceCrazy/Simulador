@@ -16,7 +16,7 @@ except NameError:
     # Caso __file__ não esteja definido (ex: Streamlit Cloud ou outros ambientes)
     pasta_app = Path(os.getcwd())
 
-caminho_excel = pasta_app / "Dados" / "Base_Dados2.xlsx"
+caminho_excel = pasta_app / "Base_Dados2.xlsx"
 
 # Parâmetros de entrada
 tempo_produto = st.number_input("⏱️ Tempo médio por produto (s)", value=20)
