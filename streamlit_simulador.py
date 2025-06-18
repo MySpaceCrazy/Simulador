@@ -141,7 +141,5 @@ if "dados_simulacao" in st.session_state:
         st.plotly_chart(fig2, use_container_width=True)
 
 
-        except Exception as e:
-            st.error(f"Erro ao processar o arquivo: {e}")
     else:
         st.warning("⚠️ Por favor, envie um arquivo Excel para prosseguir com a simulação.")
