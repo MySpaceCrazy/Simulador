@@ -131,9 +131,20 @@ if "dados_simulacao" in st.session_state:
             {"Estação": est, "Tempo Total (s)": tempo} for est, tempo in tempo_por_estacao.items()
         ]).sort_values(by="Tempo Total (s)", ascending=False)
 
-        fig1 = px.bar(estacoes_df, x="Estação", y="Tempo Total (s)",
-                      title="🏭 Estações mais utilizadas (tempo total)", labels={"Tempo Total (s)": "Tempo (s)"})
+                # Adiciona a coluna com tempo formatado
+        estacoes_df["Tempo Formatado"] = estacoes_df["Tempo Total (s)"].apply(formatar_tempo)
+
+        # Cria o gráfico com hover mostrando tempo legível
+        fig1 = px.bar(
+            estacoes_df,
+            x="Estação",
+            y="Tempo Total (s)",
+            title="🏭 Estações mais utilizadas (tempo total)",
+            labels={"Tempo Total (s)": "Tempo (s)"},
+            hover_data={"Tempo Formatado": True, "Tempo Total (s)": False})
+
         st.plotly_chart(fig1, use_container_width=True)
+
 
 
     else:
