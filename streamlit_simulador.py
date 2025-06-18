@@ -128,17 +128,13 @@ if "dados_simulacao" in st.session_state:
         resultados_raw = st.session_state["dados_simulacao"]["resultados_raw"]
         tempo_por_estacao = st.session_state["dados_simulacao"]["tempo_por_estacao"]
 
-        fig1 = px.bar(resultados_raw, x="ID_Caixa", y="Tempo Total (s)",
-                      title="⏳ Tempo total por caixa", labels={"Tempo Total (s)": "Tempo (s)"})
-        st.plotly_chart(fig1, use_container_width=True)
-
         estacoes_df = pd.DataFrame([
             {"Estação": est, "Tempo Total (s)": tempo} for est, tempo in tempo_por_estacao.items()
         ]).sort_values(by="Tempo Total (s)", ascending=False)
 
-        fig2 = px.bar(estacoes_df, x="Estação", y="Tempo Total (s)",
+        fig1 = px.bar(estacoes_df, x="Estação", y="Tempo Total (s)",
                       title="🏭 Estações mais utilizadas (tempo total)", labels={"Tempo Total (s)": "Tempo (s)"})
-        st.plotly_chart(fig2, use_container_width=True)
+        st.plotly_chart(fig1, use_container_width=True)
 
 
     else:
