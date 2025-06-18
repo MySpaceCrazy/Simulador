@@ -11,7 +11,7 @@ st.title("🧪 Simulador de Separação de Produtos")
 tempo_produto = st.number_input("⏱️ Tempo médio por produto (s)", value=20)
 tempo_deslocamento = st.number_input("🚚 Tempo entre estações (s)", value=5)
 capacidade_estacao = st.number_input("📦 Capacidade máxima de caixas simultâneas por estação", value=10, min_value=1)
-pessoas_por_estacao = st.number_input("👷‍♂️ Número de pessoas por estação", value=1, min_value=1)
+pessoas_por_estacao = st.number_input("👷‍♂️ Número de pessoas por estação", value=1, min_value=0)
 tempo_adicional_caixa = st.number_input("➕ Tempo adicional por caixa (s)", value=0)
 
 # Upload do arquivo Excel
