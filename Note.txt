@@ -3,16 +3,17 @@ import streamlit as st
 import pandas as pd
 from collections import defaultdict
 import io
+import plotly.express as px
 
 st.set_page_config(page_title="Simulador de Separação", layout="centered")
 st.title("🧪 Simulador de Separação de Produtos")
 
 # Parâmetros de entrada
-tempo_produto = st.number_input("⏱️ Tempo médio por produto (s)", value=20)
-tempo_deslocamento = st.number_input("🚚 Tempo entre estações (s)", value=5)
+tempo_produto = st.number_input("⏱️ Tempo médio por produto (s)", value=20.0, step=1.0, format="%.2f")
+tempo_deslocamento = st.number_input("🚚 Tempo entre estações (s)", value=5.0, step=1.0, format="%.2f")
 capacidade_estacao = st.number_input("📦 Capacidade máxima de caixas simultâneas por estação", value=10, min_value=1)
-pessoas_por_estacao = st.number_input("👷‍♂️ Número de pessoas por estação", value=1.0, min_value=0.0)
-tempo_adicional_caixa = st.number_input("➕ Tempo adicional por caixa (s)", value=0)
+pessoas_por_estacao = st.number_input("👷‍♂️ Número de pessoas por estação", value=1.0, min_value=0.01, step=0.1, format="%.2f")
+tempo_adicional_caixa = st.number_input("➕ Tempo adicional por caixa (s)", value=0.0, step=1.0, format="%.2f")
 
 # Upload do arquivo Excel
 uploaded_file = st.file_uploader("📂 Faça upload do arquivo Excel com os dados", type=["xlsx"])
@@ -20,13 +21,11 @@ uploaded_file = st.file_uploader("📂 Faça upload do arquivo Excel com os dado
 def formatar_tempo(segundos):
     if segundos < 60:
         return f"{int(round(segundos))} segundos"
-
     dias = int(segundos // 86400)
     segundos %= 86400
     horas = int(segundos // 3600)
     segundos %= 3600
     minutos = int(segundos // 60)
-
     partes = []
     if dias > 0:
         partes.append(f"{dias} {'dia' if dias == 1 else 'dias'}")
@@ -34,9 +33,9 @@ def formatar_tempo(segundos):
         partes.append(f"{horas} {'hora' if horas == 1 else 'horas'}")
     if minutos > 0:
         partes.append(f"{minutos} {'minuto' if minutos == 1 else 'minutos'}")
-
     return " e ".join(partes)
 
+# Botão e execução da simulação
 if st.button("▶️ Iniciar Simulação"):
     if uploaded_file is not None:
         try:
@@ -44,24 +43,21 @@ if st.button("▶️ Iniciar Simulação"):
             df = df.sort_values(by=["ID_Pacote", "ID_Caixas"])
             caixas = df["ID_Caixas"].unique()
 
-            # Estimar tempo por caixa (para ordenar entrada)
             estimativas = []
             for caixa in caixas:
                 caixa_df = df[df["ID_Caixas"] == caixa]
-                total_produtos = float(caixa_df["Contagem de Produto"].sum())
+                total_produtos = caixa_df["Contagem de Produto"].sum()
                 num_estacoes = caixa_df["Estação"].nunique()
                 tempo_estimado = (total_produtos * tempo_produto) / pessoas_por_estacao + (num_estacoes * tempo_deslocamento) + tempo_adicional_caixa
                 estimativas.append((caixa, tempo_estimado))
 
             caixas_ordenadas = [cx for cx, _ in sorted(estimativas, key=lambda x: x[1])]
-
-            # Controle de tempo por estação (paralelo)
-            disponibilidade_estacao = defaultdict(list)  # lista de tempos por pessoa por estação
+            disponibilidade_estacao = defaultdict(list)
+            tempo_por_estacao = defaultdict(float)
             tempo_caixas = {}
             gargalo_ocorrido = False
             tempo_gargalo = None
-
-            tempo_total_simulacao = 0  # maior tempo ao final de todas as caixas
+            tempo_total_simulacao = 0
 
             for caixa in caixas_ordenadas:
                 caixa_df = df[df["ID_Caixas"] == caixa]
@@ -70,80 +66,89 @@ if st.button("▶️ Iniciar Simulação"):
 
                 for _, linha in caixa_df.iterrows():
                     estacao = linha["Estação"]
-                    contagem = float(linha["Contagem de Produto"])
-
+                    contagem = linha["Contagem de Produto"]
                     duracao = (contagem * tempo_produto) / pessoas_por_estacao + tempo_deslocamento
 
-                    # Inicializar fila de disponibilidade por pessoa na estação
                     if not disponibilidade_estacao[estacao]:
-                        disponibilidade_estacao[estacao] = [0.0] * pessoas_por_estacao
+                        disponibilidade_estacao[estacao] = [0.0] * int(max(1, pessoas_por_estacao))
 
-                    # Escolhe a pessoa com menor tempo de disponibilidade
                     idx_pessoa_livre = disponibilidade_estacao[estacao].index(min(disponibilidade_estacao[estacao]))
                     inicio = max(disponibilidade_estacao[estacao][idx_pessoa_livre], tempo_inicio_caixa)
                     fim = inicio + duracao
 
-                    # Atualiza tempo da pessoa na estação
-                    disponibilidade_estacao[estacao][idx_pessoa_livre] = fim
-                    tempos_finais.append(fim)
-
-                    # Detecta gargalo (estação cheia)
-                    if disponibilidade_estacao[estacao].count(inicio) == capacidade_estacao and not gargalo_ocorrido:
+                    if disponibilidade_estacao[estacao].count(inicio) >= capacidade_estacao and not gargalo_ocorrido:
                         gargalo_ocorrido = True
                         tempo_gargalo = inicio
+
+                    disponibilidade_estacao[estacao][idx_pessoa_livre] = fim
+                    tempo_por_estacao[estacao] += duracao
+                    tempos_finais.append(fim)
 
                 if tempos_finais:
                     fim_caixa = max(tempos_finais) + tempo_adicional_caixa
                     tempo_caixas[caixa] = fim_caixa - tempo_inicio_caixa
                     tempo_total_simulacao = max(tempo_total_simulacao, fim_caixa)
                 else:
-                    st.warning(f"⚠️ Caixa '{caixa}' não possui produtos para separação.")
+                    st.warning(f"⚠️ Caixa '{caixa}' não possui produtos.")
                     tempo_caixas[caixa] = 0
 
-            # Exibir resultados
-            st.subheader("📊 Resultados da Simulação")
-            st.write(f"🔚 **Tempo total para separar todas as caixas:** {formatar_tempo(tempo_total_simulacao)} — Simuladas {len(caixas)} caixas diferentes")
-            st.write(f"🧱 **Tempo até o primeiro gargalo:** {formatar_tempo(tempo_gargalo) if gargalo_ocorrido else 'Nenhum gargalo'}")
-
-            # DataFrame para exibição
-            resultados_exibicao = pd.DataFrame([
-                {
-                    "Sugestão de Ordem (Melhor Start)": idx + 1,
-                    "ID_Caixa": caixa,
-                    "Tempo Total": formatar_tempo(tempo_caixas[caixa])
-                }
+            # Resultados da simulação
+            resultados_raw = pd.DataFrame([
+                {"Sugestão de Ordem (Melhor Start)": idx + 1, "ID_Caixa": caixa, "Tempo Total (s)": tempo_caixas[caixa]}
                 for idx, caixa in enumerate(caixas_ordenadas)
             ])
+            resultados_exibicao = resultados_raw.copy()
+            resultados_exibicao["Tempo Total"] = resultados_exibicao["Tempo Total (s)"].apply(formatar_tempo)
+
+            st.subheader("📊 Resultados da Simulação")
+            st.write(f"🔚 **Tempo total para separar todas as caixas:** {formatar_tempo(tempo_total_simulacao)}")
+            st.write(f"🧱 **Tempo até o primeiro gargalo:** {formatar_tempo(tempo_gargalo) if gargalo_ocorrido else 'Nenhum gargalo'}")
             st.dataframe(resultados_exibicao)
 
-            # DataFrame para exportação
-            resultados_raw = pd.DataFrame([
-                {
-                    "Sugestão de Ordem (Melhor Start)": idx + 1,
-                    "ID_Caixa": caixa,
-                    "Tempo Total (s)": tempo_caixas[caixa]
-                }
-                for idx, caixa in enumerate(caixas_ordenadas)
-            ])
-
-            # Excel export
             output = io.BytesIO()
             with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
                 resultados_raw.to_excel(writer, index=False, sheet_name='Resultados')
-            dados_excel = output.getvalue()
+            st.download_button("📥 Baixar resultados em Excel", output.getvalue(), "resultado_simulacao.xlsx")
 
-            st.download_button(
-                label="📥 Baixar resultados em Excel",
-                data=dados_excel,
-                file_name="resultado_simulacao.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            )
+            # Salvar no estado da sessão
+            st.session_state["dados_simulacao"] = {
+                "resultados_raw": resultados_raw,
+                "tempo_por_estacao": tempo_por_estacao
+            }
 
         except Exception as e:
             st.error(f"Erro ao processar o arquivo: {e}")
     else:
         st.warning("⚠️ Por favor, envie um arquivo Excel para prosseguir com a simulação.")
 
+# Checkbox para gráficos
+if "dados_simulacao" in st.session_state:
+    if st.checkbox("📈 Ver gráficos e dashboards"):
+        st.subheader("📊 Dashboards Visuais")
+        tempo_por_estacao = st.session_state["dados_simulacao"]["tempo_por_estacao"]
+
+        estacoes_df = pd.DataFrame([
+            {"Estação": est, "Tempo Total (s)": tempo} for est, tempo in tempo_por_estacao.items()
+        ]).sort_values(by="Tempo Total (s)", ascending=False)
+
+                # Adiciona a coluna com tempo formatado
+        estacoes_df["Tempo Formatado"] = estacoes_df["Tempo Total (s)"].apply(formatar_tempo)
+
+        # Cria o gráfico com hover mostrando tempo legível
+        fig1 = px.bar(
+            estacoes_df,
+            x="Estação",
+            y="Tempo Total (s)",
+            title="🏭 Estações mais utilizadas (tempo total)",
+            labels={"Tempo Total (s)": "Tempo (s)"},
+            hover_data={"Tempo Formatado": True, "Tempo Total (s)": False})
+
+        st.plotly_chart(fig1, use_container_width=True)
+
+
+
+    else:
+        st.warning("⚠️ Por favor, envie um arquivo Excel para prosseguir com a simulação.")
 
 
 # Caso não processo os python execute esse comando no terminal "C:/Users/anderson.oliveira5/AppData/Local/Programs/Python/Python313/python.exe -m streamlit run "C:/Users/anderson.oliveira5/Downloads/Simulações/streamlit_simulador.py"
