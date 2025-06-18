@@ -35,6 +35,7 @@ def formatar_tempo(segundos):
         partes.append(f"{minutos} {'minuto' if minutos == 1 else 'minutos'}")
     return " e ".join(partes)
 
+# Botão e execução da simulação
 if st.button("▶️ Iniciar Simulação"):
     if uploaded_file is not None:
         try:
@@ -42,7 +43,6 @@ if st.button("▶️ Iniciar Simulação"):
             df = df.sort_values(by=["ID_Pacote", "ID_Caixas"])
             caixas = df["ID_Caixas"].unique()
 
-            # Estimar tempo por caixa
             estimativas = []
             for caixa in caixas:
                 caixa_df = df[df["ID_Caixas"] == caixa]
@@ -52,7 +52,6 @@ if st.button("▶️ Iniciar Simulação"):
                 estimativas.append((caixa, tempo_estimado))
 
             caixas_ordenadas = [cx for cx, _ in sorted(estimativas, key=lambda x: x[1])]
-
             disponibilidade_estacao = defaultdict(list)
             tempo_por_estacao = defaultdict(float)
             tempo_caixas = {}
@@ -93,51 +92,54 @@ if st.button("▶️ Iniciar Simulação"):
                     st.warning(f"⚠️ Caixa '{caixa}' não possui produtos.")
                     tempo_caixas[caixa] = 0
 
-            # Exibir resultados
+            # Resultados da simulação
+            resultados_raw = pd.DataFrame([
+                {"Sugestão de Ordem (Melhor Start)": idx + 1, "ID_Caixa": caixa, "Tempo Total (s)": tempo_caixas[caixa]}
+                for idx, caixa in enumerate(caixas_ordenadas)
+            ])
+            resultados_exibicao = resultados_raw.copy()
+            resultados_exibicao["Tempo Total"] = resultados_exibicao["Tempo Total (s)"].apply(formatar_tempo)
+
             st.subheader("📊 Resultados da Simulação")
             st.write(f"🔚 **Tempo total para separar todas as caixas:** {formatar_tempo(tempo_total_simulacao)}")
             st.write(f"🧱 **Tempo até o primeiro gargalo:** {formatar_tempo(tempo_gargalo) if gargalo_ocorrido else 'Nenhum gargalo'}")
-
-            resultados_exibicao = pd.DataFrame([
-                {
-                    "Sugestão de Ordem (Melhor Start)": idx + 1,
-                    "ID_Caixa": caixa,
-                    "Tempo Total": formatar_tempo(tempo_caixas[caixa])
-                }
-                for idx, caixa in enumerate(caixas_ordenadas)
-            ])
             st.dataframe(resultados_exibicao)
-
-            resultados_raw = pd.DataFrame([
-                {
-                    "Sugestão de Ordem (Melhor Start)": idx + 1,
-                    "ID_Caixa": caixa,
-                    "Tempo Total (s)": tempo_caixas[caixa]
-                }
-                for idx, caixa in enumerate(caixas_ordenadas)
-            ])
 
             output = io.BytesIO()
             with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
                 resultados_raw.to_excel(writer, index=False, sheet_name='Resultados')
             st.download_button("📥 Baixar resultados em Excel", output.getvalue(), "resultado_simulacao.xlsx")
 
-            # Gráficos
-            ver_graficos = st.checkbox("📈 Ver gráficos e dashboards")
-            if ver_graficos:
-                st.subheader("📊 Dashboards Visuais")
+            # Salvar no estado da sessão
+            st.session_state["dados_simulacao"] = {
+                "resultados_raw": resultados_raw,
+                "tempo_por_estacao": tempo_por_estacao
+            }
 
-                fig1 = px.bar(resultados_raw, x="ID_Caixa", y="Tempo Total (s)",
-                              title="⏳ Tempo total por caixa", labels={"Tempo Total (s)": "Tempo (s)"})
-                st.plotly_chart(fig1, use_container_width=True)
+        except Exception as e:
+            st.error(f"Erro ao processar o arquivo: {e}")
+    else:
+        st.warning("⚠️ Por favor, envie um arquivo Excel para prosseguir com a simulação.")
 
-                estacoes_df = pd.DataFrame([
-                    {"Estação": est, "Tempo Total (s)": tempo} for est, tempo in tempo_por_estacao.items()
-                ]).sort_values(by="Tempo Total (s)", ascending=False)
+# Checkbox para gráficos
+if "dados_simulacao" in st.session_state:
+    if st.checkbox("📈 Ver gráficos e dashboards"):
+        st.subheader("📊 Dashboards Visuais")
+        resultados_raw = st.session_state["dados_simulacao"]["resultados_raw"]
+        tempo_por_estacao = st.session_state["dados_simulacao"]["tempo_por_estacao"]
 
-                fig2 = px.bar(estacoes_df, x="Estação", y="Tempo Total (s)",
-                              title="🏭 Estações mais utilizadas (tempo total)", labels={"Tempo Total (s)": "Tempo (s)"})
-                st.plotly_chart(fig2, use_container_width=True)
+        fig1 = px.bar(resultados_raw, x="ID_Caixa", y="Tempo Total (s)",
+                      title="⏳ Tempo total por caixa", labels={"Tempo Total (s)": "Tempo (s)"})
+        st.plotly_chart(fig1, use_container_width=True)
+
+        estacoes_df = pd.DataFrame([
+            {"Estação": est, "Tempo Total (s)": tempo} for est, tempo in tempo_por_estacao.items()
+        ]).sort_values(by="Tempo Total (s)", ascending=False)
+
+        fig2 = px.bar(estacoes_df, x="Estação", y="Tempo Total (s)",
+                      title="🏭 Estações mais utilizadas (tempo total)", labels={"Tempo Total (s)": "Tempo (s)"})
+        st.plotly_chart(fig2, use_container_width=True)
+
 
         except Exception as e:
             st.error(f"Erro ao processar o arquivo: {e}")
