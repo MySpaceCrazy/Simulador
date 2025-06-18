@@ -17,9 +17,9 @@ with col_esq:
     capacidade_estacao = st.number_input("📦 Capacidade máxima de caixas simultâneas por estação", value=10, min_value=1)
     pessoas_por_estacao = st.number_input("👷‍♂️ Número de pessoas por estação", value=1.0, min_value=0.01, step=0.1, format="%.2f")
     tempo_adicional_caixa = st.number_input("➕ Tempo adicional por caixa (s)", value=0.0, step=1.0, format="%.2f")
-
     uploaded_file = st.file_uploader("📂 Faça upload do arquivo Excel com os dados", type=["xlsx"])
 
+# Função auxiliar
 def formatar_tempo(segundos):
     if segundos < 60:
         return f"{int(round(segundos))} segundos"
@@ -29,17 +29,14 @@ def formatar_tempo(segundos):
     segundos %= 3600
     minutos = int(segundos // 60)
     partes = []
-    if dias > 0:
-        partes.append(f"{dias} {'dia' if dias == 1 else 'dias'}")
-    if horas > 0:
-        partes.append(f"{horas} {'hora' if horas == 1 else 'horas'}")
-    if minutos > 0:
-        partes.append(f"{minutos} {'minuto' if minutos == 1 else 'minutos'}")
+    if dias > 0: partes.append(f"{dias} {'dia' if dias == 1 else 'dias'}")
+    if horas > 0: partes.append(f"{horas} {'hora' if horas == 1 else 'horas'}")
+    if minutos > 0: partes.append(f"{minutos} {'minuto' if minutos == 1 else 'minutos'}")
     return " e ".join(partes)
 
-# Botões no topo
+# Botão do gráfico sempre marcado
 with col_dir:
-    ver_graficos = st.checkbox("📊 Ver gráficos e dashboards")
+    ver_graficos = st.checkbox("📊 Ver gráficos e dashboards", value=True)
 
 # Botão de simulação
 with col_esq:
@@ -50,7 +47,13 @@ with col_esq:
                 df = df.sort_values(by=["ID_Pacote", "ID_Caixas"])
                 caixas = df["ID_Caixas"].unique()
 
-                estimativas = []
+                estimativas, tempo_caixas = [], {}
+                disponibilidade_estacao = defaultdict(list)
+                tempo_por_estacao = defaultdict(float)
+                gargalo_ocorrido = False
+                tempo_gargalo = None
+                tempo_total_simulacao = 0
+
                 for caixa in caixas:
                     caixa_df = df[df["ID_Caixas"] == caixa]
                     total_produtos = caixa_df["Contagem de Produto"].sum()
@@ -59,12 +62,6 @@ with col_esq:
                     estimativas.append((caixa, tempo_estimado))
 
                 caixas_ordenadas = [cx for cx, _ in sorted(estimativas, key=lambda x: x[1])]
-                disponibilidade_estacao = defaultdict(list)
-                tempo_por_estacao = defaultdict(float)
-                tempo_caixas = {}
-                gargalo_ocorrido = False
-                tempo_gargalo = None
-                tempo_total_simulacao = 0
 
                 for caixa in caixas_ordenadas:
                     caixa_df = df[df["ID_Caixas"] == caixa]
@@ -116,7 +113,6 @@ with col_esq:
                     resultados_raw.to_excel(writer, index=False, sheet_name='Resultados')
                 st.download_button("📥 Baixar resultados em Excel", output.getvalue(), "resultado_simulacao.xlsx")
 
-                # Salva para os gráficos
                 st.session_state["dados_simulacao"] = {
                     "resultados_raw": resultados_raw,
                     "tempo_por_estacao": tempo_por_estacao
@@ -134,7 +130,8 @@ if ver_graficos and "dados_simulacao" in st.session_state:
         tempo_por_estacao = st.session_state["dados_simulacao"]["tempo_por_estacao"]
 
         estacoes_df = pd.DataFrame([
-            {"Estação": est, "Tempo Total (s)": tempo} for est, tempo in tempo_por_estacao.items()
+            {"Estação": est, "Tempo Total (s)": tempo}
+            for est, tempo in tempo_por_estacao.items()
         ]).sort_values(by="Tempo Total (s)", ascending=False)
 
         estacoes_df["Tempo Formatado"] = estacoes_df["Tempo Total (s)"].apply(formatar_tempo)
