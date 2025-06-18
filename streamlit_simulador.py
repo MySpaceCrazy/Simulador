@@ -102,7 +102,7 @@ if st.button("▶️ Iniciar Simulação"):
 
             # Exibir resultados
             st.subheader("📊 Resultados da Simulação")
-            st.write(f"🔚 **Tempo total para separar todas as caixas:** {formatar_tempo(tempo_total_simulacao)}")
+            st.write(f"🔚 **Tempo total para separar todas as caixas:** {formatar_tempo(tempo_total_simulacao)} — Simuladas {len(caixas)} caixas diferentes")
             st.write(f"🧱 **Tempo até o primeiro gargalo:** {formatar_tempo(tempo_gargalo) if gargalo_ocorrido else 'Nenhum gargalo'}")
 
             # DataFrame para exibição
