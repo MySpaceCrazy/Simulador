@@ -48,7 +48,7 @@ if st.button("▶️ Iniciar Simulação"):
             estimativas = []
             for caixa in caixas:
                 caixa_df = df[df["ID_Caixas"] == caixa]
-                total_produtos = caixa_df["Contagem de Produto"].sum()
+                total_produtos = float(caixa_df["Contagem de Produto"].sum())
                 num_estacoes = caixa_df["Estação"].nunique()
                 tempo_estimado = (total_produtos * tempo_produto) / pessoas_por_estacao + (num_estacoes * tempo_deslocamento) + tempo_adicional_caixa
                 estimativas.append((caixa, tempo_estimado))
@@ -70,7 +70,7 @@ if st.button("▶️ Iniciar Simulação"):
 
                 for _, linha in caixa_df.iterrows():
                     estacao = linha["Estação"]
-                    contagem = linha["Contagem de Produto"]
+                    contagem = float(linha["Contagem de Produto"])
 
                     duracao = (contagem * tempo_produto) / pessoas_por_estacao + tempo_deslocamento
 
