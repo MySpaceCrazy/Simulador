@@ -125,7 +125,6 @@ if st.button("▶️ Iniciar Simulação"):
 if "dados_simulacao" in st.session_state:
     if st.checkbox("📈 Ver gráficos e dashboards"):
         st.subheader("📊 Dashboards Visuais")
-        resultados_raw = st.session_state["dados_simulacao"]["resultados_raw"]
         tempo_por_estacao = st.session_state["dados_simulacao"]["tempo_por_estacao"]
 
         estacoes_df = pd.DataFrame([
