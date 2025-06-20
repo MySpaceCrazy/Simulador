@@ -11,7 +11,7 @@ st.set_page_config(page_title="Simulador de Separação", layout="wide")
 st.title("🧪 Simulador de Separação de Produtos")
 
 # Colunas principais
-col_esq, col_dir = st.columns([1, 1])
+col_esq, col_dir = st.columns([3, 3])
 
 # Entrada de parâmetros (lado esquerdo)
 with col_esq:
@@ -198,7 +198,7 @@ with col_esq:
 if comparar_simulacoes and len(st.session_state.simulacoes_salvas) > 1:
     st.markdown("---")
     st.subheader("🔁 Comparativo entre Simulações")
-    col_base, col_lojas = st.columns([1, 1])
+    col_base, col_lojas = st.columns([1, 2])
 
     with col_base:
         ids = list(st.session_state.simulacoes_salvas.keys())
