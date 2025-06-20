@@ -259,3 +259,19 @@ if comparar_simulacoes and (len(st.session_state.simulacoes_salvas) > 1 or uploa
         st.markdown("### 📊 Comparativo de Tempo por Estação (Total)")
         fig_comp = px.bar(df_comp, x="Estação", y="Tempo (s)", color="Simulação", barmode="group")
         st.plotly_chart(fig_comp, use_container_width=True)
+
+    # === Aqui adicionamos os resumos comparativos ===
+    tempo1 = sim1["tempo_total"]
+    tempo2 = sim2["tempo_total"] if uploaded_comp is None else df2["Tempo (s)"].sum()
+    delta_tempo = tempo2 - tempo1
+    abs_pct = abs(delta_tempo / tempo1 * 100) if tempo1 else 0
+    direcao = "melhorou" if delta_tempo < 0 else "aumentou"
+
+    caixas1 = sim1.get("total_caixas", 0)
+    caixas2 = sim2.get("total_caixas", 0) if uploaded_comp is None else len(caixas_ext)
+    caixas_diferenca = caixas2 - caixas1
+    caixas_pct = (caixas_diferenca / caixas1 * 100) if caixas1 else 0
+
+    tempo_formatado = formatar_tempo(abs(delta_tempo))
+    st.metric("Delta de Tempo Total", f"{tempo_formatado}", f"{delta_tempo:+.0f}s ({abs_pct:.1f}% {direcao})")
+    st.write(f"📦 **Caixas Base:** {caixas1} | **Comparada:** {caixas2} | Δ {caixas_diferenca:+} caixas ({caixas_pct:+.1f}%)")
