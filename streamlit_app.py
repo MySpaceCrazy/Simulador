@@ -187,11 +187,13 @@ with col_esq:
 
 
 
+# (mesmo início do código anterior até a seção de comparação...)
+
 # Comparativo entre Simulações - com % e resumo de caixas
 if comparar_simulacoes and "simulacoes_salvas" in st.session_state and len(st.session_state.simulacoes_salvas) > 1:
     st.markdown("---")
     st.subheader("🔁 Comparativo entre Simulações")
-    col_base, col_lojas = st.columns(2)
+    col_base, col_lojas = st.columns([1, 1])
 
     with col_base:
         ids = list(st.session_state.simulacoes_salvas.keys())
@@ -234,10 +236,13 @@ if comparar_simulacoes and "simulacoes_salvas" in st.session_state and len(st.se
             )
             st.plotly_chart(fig_comp, use_container_width=True)
 
-    # Move o relatório principal para a coluna da direita
     with col_lojas:
+        st.markdown("---")
+        st.subheader("🏪 Relatório por Loja")
         if "relatorio_loja" in st.session_state:
             relatorio_loja = st.session_state["relatorio_loja"]
-            st.markdown("---")
-            st.subheader("🏪 Relatório por Loja")
-            st.dataframe(relatorio_loja[["ID_Loja", "Num_Caixas", "Total_Produtos", "Tempo Total", "Tempo Médio por Caixa"]], use_container_width=True)
+            st.dataframe(
+                relatorio_loja[["ID_Loja", "Num_Caixas", "Total_Produtos", "Tempo Total", "Tempo Médio por Caixa"]],
+                use_container_width=True
+            )
+
