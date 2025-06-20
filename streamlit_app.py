@@ -209,8 +209,8 @@ if comparar_simulacoes and len(st.session_state.simulacoes_salvas) > 1:
     st.subheader("🔁 Comparativo entre Simulações")
 
     ids = st.session_state.get("ordem_simulacoes", list(st.session_state.simulacoes_salvas.keys()))
-    id1 = st.selectbox("Simulação Base", ids, index=0)
-    id2 = st.selectbox("Simulação Comparada", ids, index=1 if len(ids) > 1 else 0)
+    id1 = st.selectbox("Simulação Base Anterior", ids, index=0)
+    id2 = st.selectbox("Simulação Base Atual", ids, index=1 if len(ids) > 1 else 0)
 
     sim1 = st.session_state.simulacoes_salvas[id1]
     sim2 = st.session_state.simulacoes_salvas[id2]
