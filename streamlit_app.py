@@ -126,9 +126,10 @@ with col_esq:
                 )
 
                 tempo_loja_agg = tempos_lojas.groupby("ID_Loja").agg(
-                    Tempo_Total_s=("Tempo Total (s)", "sum"),
+                    Tempo_Total_s=("Tempo Total (s)", "max"),  # Corrigido: usa o maior tempo, não a soma
                     Tempo_Médio_por_Caixa_s=("Tempo Total (s)", "mean")
                 ).reset_index()
+
 
                 relatorio_loja = relatorio_loja.merge(tempo_loja_agg, on="ID_Loja")
                 relatorio_loja["Tempo Total"] = relatorio_loja["Tempo_Total_s"].apply(formatar_tempo)
