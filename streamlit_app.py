@@ -20,7 +20,7 @@ with col_esq:
     tempo_adicional_caixa = st.number_input("➕ Tempo adicional por caixa (s)", value=0.0, step=1.0, format="%.2f")
     uploaded_file = st.file_uploader("📂 Faça upload do arquivo Excel com os dados", type=["xlsx"])
 
-# Função auxiliar
+# Função auxiliar para formatar tempo
 def formatar_tempo(segundos):
     if segundos < 60:
         return f"{int(round(segundos))} segundos"
@@ -29,16 +29,13 @@ def formatar_tempo(segundos):
     horas = int(segundos // 3600)
     segundos %= 3600
     minutos = int(segundos // 60)
-    segundos = int(round(segundos % 60))  # segundos restantes
-
+    segundos = int(round(segundos % 60))
     partes = []
     if dias > 0: partes.append(f"{dias} {'dia' if dias == 1 else 'dias'}")
     if horas > 0: partes.append(f"{horas} {'hora' if horas == 1 else 'horas'}")
     if minutos > 0: partes.append(f"{minutos} {'minuto' if minutos == 1 else 'minutos'}")
     if segundos > 0: partes.append(f"{segundos} {'segundo' if segundos == 1 else 'segundos'}")
-
     return " e ".join(partes)
-
 
 # Botão do gráfico sempre marcado
 with col_dir:
@@ -114,9 +111,42 @@ with col_esq:
                 st.write(f"🧱 **Tempo até o primeiro gargalo:** {formatar_tempo(tempo_gargalo) if gargalo_ocorrido else 'Nenhum gargalo'}")
                 st.dataframe(resultados_exibicao)
 
+                # Relatório por Loja
+                df_lojas = df[df["ID_Caixas"].isin(caixas_ordenadas)]
+
+                relatorio_loja = df_lojas.groupby("ID_Loja").agg(
+                    Num_Caixas=("ID_Caixas", lambda x: x.nunique()),
+                    Total_Produtos=("Contagem de Produto", "sum"),
+                ).reset_index()
+
+                tempos_lojas = (
+                    df_lojas[["ID_Caixas", "ID_Loja"]]
+                    .drop_duplicates()
+                    .merge(resultados_raw[["ID_Caixa", "Tempo Total (s)"]], left_on="ID_Caixas", right_on="ID_Caixa")
+                )
+
+                tempo_loja_agg = tempos_lojas.groupby("ID_Loja").agg(
+                    Tempo_Total_s=("Tempo Total (s)", "sum"),
+                    Tempo_Médio_por_Caixa_s=("Tempo Total (s)", "mean")
+                ).reset_index()
+
+                relatorio_loja = relatorio_loja.merge(tempo_loja_agg, on="ID_Loja")
+                relatorio_loja["Tempo Total"] = relatorio_loja["Tempo_Total_s"].apply(formatar_tempo)
+                relatorio_loja["Tempo Médio por Caixa"] = relatorio_loja["Tempo_Médio_por_Caixa_s"].apply(formatar_tempo)
+                relatorio_loja = relatorio_loja.sort_values(by="Tempo_Total_s", ascending=False)
+
+                st.markdown("---")
+                st.subheader("🏪 Relatório por Loja")
+                st.dataframe(
+                    relatorio_loja[[
+                        "ID_Loja", "Num_Caixas", "Total_Produtos", "Tempo Total", "Tempo Médio por Caixa"
+                    ]]
+                )
+
                 output = io.BytesIO()
                 with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
                     resultados_raw.to_excel(writer, index=False, sheet_name='Resultados')
+                    relatorio_loja.to_excel(writer, index=False, sheet_name='Relatório por Loja')
                 st.download_button("📥 Baixar resultados em Excel", output.getvalue(), "resultado_simulacao.xlsx")
 
                 st.session_state["dados_simulacao"] = {
