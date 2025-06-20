@@ -234,7 +234,9 @@ if comparar_simulacoes and "simulacoes_salvas" in st.session_state and len(st.se
             )
             st.plotly_chart(fig_comp, use_container_width=True)
 
+    # Move o relatório principal para a coluna da direita
     with col_lojas:
-        if "relatorio_loja" in sim2:
-            st.subheader("🏪 Relatório por Loja (Simulação Comparada)")
-            st.dataframe(sim2["relatorio_loja"]["ID_Loja Num_Caixas Total_Produtos Tempo Total Tempo Médio por Caixa".split()])
+        if "relatorio_loja" in st.session_state:
+            relatorio_loja = st.session_state["relatorio_loja"]
+            st.subheader("🏪 Relatório por Loja")
+            st.dataframe(relatorio_loja[["ID_Loja", "Num_Caixas", "Total_Produtos", "Tempo Total", "Tempo Médio por Caixa"]])
