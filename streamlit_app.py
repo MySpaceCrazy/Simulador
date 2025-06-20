@@ -39,10 +39,6 @@ def formatar_tempo(segundos):
     if segundos > 0: partes.append(f"{segundos} {'segundo' if segundos == 1 else 'segundos'}")
     return " e ".join(partes)
 
-# Botões e gráficos
-with col_dir:
-    ver_graficos = st.checkbox("📊 Ver gráficos e dashboards", value=True, disabled=True)
-    comparar_simulacoes = st.checkbox("🔁 Comparar com simulações anteriores", value=True, disabled=True)  # Sempre marcado e desabilitado
 
 # Inicializa session_state
 if "simulacoes_salvas" not in st.session_state:
@@ -52,6 +48,11 @@ if "ultima_simulacao" not in st.session_state:
 
 # Botão de simulação
 with col_esq:
+
+    # Botões e gráficos
+    ver_graficos = st.checkbox("📊 Ver gráficos e dashboards", value=True, disabled=True)
+    comparar_simulacoes = st.checkbox("🔁 Comparar com simulações anteriores", value=True, disabled=True)  # Sempre marcado e desabilitado
+    
     if st.button("▶️ Iniciar Simulação"):
         if uploaded_file is not None:
             try:
@@ -151,23 +152,20 @@ with col_esq:
                     resultados_raw.to_excel(writer, index=False, sheet_name='Resultados')
                     relatorio_loja.to_excel(writer, index=False, sheet_name='Relatório por Loja')
                 st.download_button("📥 Baixar resultados em Excel", output.getvalue(), "resultado_simulacao.xlsx")
+
+                # Exibição lado a lado dos resultados e relatório por loja
+                col_res, col_rel = st.columns([2, 2])
+                
+                with col_res:
                 st.subheader("📊 Resultados da Simulação")
                 st.write(f"🔚 **Tempo total para separar todas as caixas:** {formatar_tempo(tempo_total_simulacao)} — Simuladas {len(caixas)} caixas diferentes")
                 st.write(f"🧱 **Tempo até o primeiro gargalo:** {formatar_tempo(tempo_gargalo) if gargalo_ocorrido else 'Nenhum gargalo'}")
                 st.markdown("---")
-
-                # Exibição lado a lado dos resultados e relatório por loja
-               
-                col_res, col_rel = st.columns([2, 2])
-                
-                with col_res:
-
-                    st.subheader("📊 Relatório da Simulação")
-                    st.dataframe(resultados_exibicao, use_container_width=True)  # Garante uso total da coluna
                 
                 with col_dir:
                         st.subheader("📊 Relatório da Simulação")
-                        st.dataframe(resultados_exibicao, use_container_width=True)  # Garante uso total da coluna                    
+                        st.dataframe(resultados_exibicao, use_container_width=True)  # Garante uso total da coluna  
+                    
                         st.subheader("🏪 Relatório por Loja")
                         st.dataframe(
                             relatorio_loja[["ID_Loja", "Num_Caixas", "Total_Produtos", "Tempo Total", "Tempo Médio por Caixa"]],
