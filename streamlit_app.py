@@ -166,7 +166,7 @@ with col_esq:
                     st.dataframe(resultados_exibicao, use_container_width=True)  # Garante uso total da coluna
                 
                 with col_dir:
-                    with col_rel:
+                    
                         st.subheader("🏪 Relatório por Loja")
                         st.dataframe(
                             relatorio_loja[["ID_Loja", "Num_Caixas", "Total_Produtos", "Tempo Total", "Tempo Médio por Caixa"]],
