@@ -157,20 +157,20 @@ with col_esq:
                 col_res, col_rel = st.columns([2, 2])
                 
                 with col_res:
-                st.subheader("📊 Resultados da Simulação")
-                st.write(f"🔚 **Tempo total para separar todas as caixas:** {formatar_tempo(tempo_total_simulacao)} — Simuladas {len(caixas)} caixas diferentes")
-                st.write(f"🧱 **Tempo até o primeiro gargalo:** {formatar_tempo(tempo_gargalo) if gargalo_ocorrido else 'Nenhum gargalo'}")
-                st.markdown("---")
+                    st.subheader("📊 Resultados da Simulação")
+                    st.write(f"🔚 **Tempo total para separar todas as caixas:** {formatar_tempo(tempo_total_simulacao)} — Simuladas {len(caixas)} caixas diferentes")
+                    st.write(f"🧱 **Tempo até o primeiro gargalo:** {formatar_tempo(tempo_gargalo) if gargalo_ocorrido else 'Nenhum gargalo'}")
+                    st.markdown("---")
                 
                 with col_dir:
-                        st.subheader("📊 Relatório da Simulação")
-                        st.dataframe(resultados_exibicao, use_container_width=True)  # Garante uso total da coluna  
-                    
-                        st.subheader("🏪 Relatório por Loja")
-                        st.dataframe(
-                            relatorio_loja[["ID_Loja", "Num_Caixas", "Total_Produtos", "Tempo Total", "Tempo Médio por Caixa"]],
-                            use_container_width=True  # Importante para ocupar todo espaço disponível na coluna
-                    )
+                    st.subheader("📊 Relatório da Simulação")
+                    st.dataframe(resultados_exibicao, use_container_width=True)  # Garante uso total da coluna  
+                
+                    st.subheader("🏪 Relatório por Loja")
+                    st.dataframe(
+                        relatorio_loja[["ID_Loja", "Num_Caixas", "Total_Produtos", "Tempo Total", "Tempo Médio por Caixa"]],
+                        use_container_width=True  # Importante para ocupar todo espaço disponível na coluna
+                )
 
 
                 st.markdown("---")
