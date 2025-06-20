@@ -239,10 +239,7 @@ if comparar_simulacoes and len(st.session_state.simulacoes_salvas) > 1:
             st.plotly_chart(fig_comp, use_container_width=True)
 
     with col_lojas:
-        
-        if not df_comp.empty:
-            fig_comp = px.bar(df_comp, x="Estação", y="Tempo (s)", color="Simulação", barmode="group", title="📊 Comparativo de Tempo por Estação")
-            st.plotly_chart(fig_comp, use_container_width=True)
+
         # Opcional: pode mostrar algo mais, por enquanto deixamos vazio para evitar repetição
         pass
 
