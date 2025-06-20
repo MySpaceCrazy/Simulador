@@ -160,7 +160,7 @@ with col_esq:
                     st.subheader("📊 Resultados da Simulação")
                     st.write(f"🔚 **Tempo total para separar todas as caixas:** {formatar_tempo(tempo_total_simulacao)} — Simuladas {len(caixas)} caixas diferentes")
                     st.write(f"🧱 **Tempo até o primeiro gargalo:** {formatar_tempo(tempo_gargalo) if gargalo_ocorrido else 'Nenhum gargalo'}")
-                    st.markdown("---")
+
                 
                 with col_dir:
                     st.subheader("📊 Relatório da Simulação")
@@ -170,7 +170,6 @@ with col_esq:
                     st.dataframe(
                         relatorio_loja[["ID_Loja", "Num_Caixas", "Total_Produtos", "Tempo Total", "Tempo Médio por Caixa"]],
                         use_container_width=True) # Importante para ocupar todo espaço disponível na coluna
-                    st.markdown("---")
 
 
                 st.markdown("---")
