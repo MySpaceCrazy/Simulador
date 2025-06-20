@@ -189,46 +189,57 @@ with col_esq:
 
 # (mesmo início do código anterior até a seção de comparação...)
 
+# (mesmo início do código anterior até a seção de comparação...)
+
 # Comparativo entre Simulações - com % e resumo de caixas
 if comparar_simulacoes and "simulacoes_salvas" in st.session_state and len(st.session_state.simulacoes_salvas) > 1:
-    st.markdown("---")
-    st.subheader("🔁 Comparativo entre Simulações")
-    ids = list(st.session_state.simulacoes_salvas.keys())
-    id1 = st.selectbox("Simulação Base", ids, index=0)
-    id2 = st.selectbox("Simulação Comparada", ids, index=1 if len(ids) > 1 else 0)
+    col_base, col_lojas = st.columns([2, 2])
+    with col_base:
+        st.markdown("---")
+        st.subheader("🔁 Comparativo entre Simulações")
+        ids = list(st.session_state.simulacoes_salvas.keys())
+        id1 = st.selectbox("Simulação Base", ids, index=0)
+        id2 = st.selectbox("Simulação Comparada", ids, index=1 if len(ids) > 1 else 0)
 
-    sim1 = st.session_state.simulacoes_salvas[id1]
-    sim2 = st.session_state.simulacoes_salvas[id2]
+        sim1 = st.session_state.simulacoes_salvas[id1]
+        sim2 = st.session_state.simulacoes_salvas[id2]
 
-    tempo1 = sim1["tempo_total"]
-    tempo2 = sim2["tempo_total"]
-    delta_tempo = tempo2 - tempo1
-    abs_pct = abs(delta_tempo / tempo1 * 100) if tempo1 else 0
-    direcao = "melhorou" if delta_tempo < 0 else "aumentou"
+        tempo1 = sim1["tempo_total"]
+        tempo2 = sim2["tempo_total"]
+        delta_tempo = tempo2 - tempo1
+        abs_pct = abs(delta_tempo / tempo1 * 100) if tempo1 else 0
+        direcao = "melhorou" if delta_tempo < 0 else "aumentou"
 
-    caixas1 = sim1.get("total_caixas", 0)
-    caixas2 = sim2.get("total_caixas", 0)
-    caixas_diferenca = caixas2 - caixas1
-    caixas_pct = (caixas_diferenca / caixas1 * 100) if caixas1 else 0
+        caixas1 = sim1.get("total_caixas", 0)
+        caixas2 = sim2.get("total_caixas", 0)
+        caixas_diferenca = caixas2 - caixas1
+        caixas_pct = (caixas_diferenca / caixas1 * 100) if caixas1 else 0
 
-    tempo_formatado = formatar_tempo(abs(delta_tempo))
-    st.metric("Delta de Tempo Total", f"{tempo_formatado}",
-              f"{delta_tempo:+.0f}s ({abs_pct:.1f}% {direcao})")
+        tempo_formatado = formatar_tempo(abs(delta_tempo))
+        st.metric("Delta de Tempo Total", f"{tempo_formatado}",
+                  f"{delta_tempo:+.0f}s ({abs_pct:.1f}% {direcao})")
 
-    st.write(f"📦 **Caixas Base:** {caixas1} | **Comparada:** {caixas2} | Δ {caixas_diferenca:+} caixas ({caixas_pct:+.1f}%)")
+        st.write(f"📦 **Caixas Base:** {caixas1} | **Comparada:** {caixas2} | Δ {caixas_diferenca:+} caixas ({caixas_pct:+.1f}%)")
 
-    # Gráfico comparativo por estação (tempo total)
-    df1 = pd.DataFrame([{"Estação": est, "Tempo (s)": tempo, "Simulação": id1} for est, tempo in sim1["tempo_por_estacao"].items()])
-    df2 = pd.DataFrame([{"Estação": est, "Tempo (s)": tempo, "Simulação": id2} for est, tempo in sim2["tempo_por_estacao"].items()])
-    df_comp = pd.concat([df1, df2])
+        # Gráfico comparativo por estação (tempo total)
+        df1 = pd.DataFrame([{"Estação": est, "Tempo (s)": tempo, "Simulação": id1} for est, tempo in sim1["tempo_por_estacao"].items()])
+        df2 = pd.DataFrame([{"Estação": est, "Tempo (s)": tempo, "Simulação": id2} for est, tempo in sim2["tempo_por_estacao"].items()])
+        df_comp = pd.concat([df1, df2])
 
-    if not df_comp.empty:
-        fig_comp = px.bar(
-            df_comp,
-            x="Estação",
-            y="Tempo (s)",
-            color="Simulação",
-            barmode="group",
-            title="📊 Comparativo de Tempo por Estação"
-        )
-        st.plotly_chart(fig_comp, use_container_width=True)
+        if not df_comp.empty:
+            fig_comp = px.bar(
+                df_comp,
+                x="Estação",
+                y="Tempo (s)",
+                color="Simulação",
+                barmode="group",
+                title="📊 Comparativo de Tempo por Estação"
+            )
+            st.plotly_chart(fig_comp, use_container_width=True)
+
+    with col_lojas:
+        if "relatorio_loja" in sim2:
+            st.markdown("---")
+            st.subheader("🏪 Relatório por Loja (Simulação Comparada)")
+            st.dataframe(sim2["relatorio_loja"][["ID_Loja", "Num_Caixas", "Total_Produtos", "Tempo Total", "Tempo Médio por Caixa"]])
+
