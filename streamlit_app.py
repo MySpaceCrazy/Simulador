@@ -186,7 +186,6 @@ with col_esq:
             st.warning("⚠️ Por favor, envie um arquivo Excel para prosseguir com a simulação.")
 
 
-
 # (mesmo início do código anterior até a seção de comparação...)
 
 # Comparativo entre Simulações - com % e resumo de caixas
@@ -246,3 +245,20 @@ if comparar_simulacoes and "simulacoes_salvas" in st.session_state and len(st.se
                 use_container_width=True
             )
 
+# Atualiza a forma de nomear a simulação
+from datetime import datetime
+
+if uploaded_file is not None:
+    nome_base = Path(uploaded_file.name).stem
+    data_hora = datetime.now().strftime("%Y-%m-%d_%Hh%Mmin")
+    id_simulacao = f"{nome_base}_{data_hora}"
+    if "simulacoes_salvas" not in st.session_state:
+        st.session_state.simulacoes_salvas = {}
+    st.session_state.simulacoes_salvas[id_simulacao] = {
+        "tempo_total": tempo_total_simulacao,
+        "tempo_por_estacao": tempo_por_estacao,
+        "relatorio_loja": relatorio_loja,
+        "gargalo": tempo_gargalo,
+        "total_caixas": len(caixas)
+    }
+    st.success(f"✅ Simulação salva como ID: {id_simulacao}")
