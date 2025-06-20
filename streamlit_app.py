@@ -185,6 +185,8 @@ with col_esq:
         else:
             st.warning("⚠️ Por favor, envie um arquivo Excel para prosseguir com a simulação.")
 
+# (mesmo início do código anterior até a seção de comparação...)
+
 # Comparativo entre Simulações - com % e resumo de caixas
 if comparar_simulacoes and "simulacoes_salvas" in st.session_state and len(st.session_state.simulacoes_salvas) > 1:
     st.markdown("---")
@@ -196,12 +198,20 @@ if comparar_simulacoes and "simulacoes_salvas" in st.session_state and len(st.se
     sim1 = st.session_state.simulacoes_salvas[id1]
     sim2 = st.session_state.simulacoes_salvas[id2]
 
-    delta_tempo = sim2["tempo_total"] - sim1["tempo_total"]
-    pct = (delta_tempo / sim1["tempo_total"] * 100) if sim1["tempo_total"] else 0
+    tempo1 = sim1["tempo_total"]
+    tempo2 = sim2["tempo_total"]
+    delta_tempo = tempo2 - tempo1
+    abs_pct = abs(delta_tempo / tempo1 * 100) if tempo1 else 0
+    direcao = "melhorou" if delta_tempo < 0 else "aumentou"
 
     caixas1 = sim1.get("total_caixas", 0)
     caixas2 = sim2.get("total_caixas", 0)
     caixas_diferenca = caixas2 - caixas1
+    caixas_pct = (caixas_diferenca / caixas1 * 100) if caixas1 else 0
 
-    st.metric("Delta de Tempo Total", formatar_tempo(delta_tempo), f"{delta_tempo:.0f}s ({pct:.1f}%)")
-    st.write(f"📦 Simulação Base: {caixas1} caixas | Comparada: {caixas2} caixas | Diferença: {caixas_diferenca:+}")
+    tempo_formatado = formatar_tempo(abs(delta_tempo))
+    st.metric("Delta de Tempo Total", f"{tempo_formatado}",
+              f"{delta_tempo:+.0f}s ({abs_pct:.1f}% {direcao})")
+
+    st.write(f"📦 **Caixas Base:** {caixas1} | **Comparada:** {caixas2} | Δ {caixas_diferenca:+} caixas ({caixas_pct:+.1f}%)")
+
