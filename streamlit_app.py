@@ -236,11 +236,11 @@ if comparar_simulacoes and "simulacoes_salvas" in st.session_state and len(st.se
             )
             st.plotly_chart(fig_comp, use_container_width=True)
 
-    with col_lojas:
-        st.markdown("---")
-        st.subheader("🏪 Relatório por Loja")
-        if "relatorio_loja" in st.session_state:
+    # Mostra o relatório na lateral direita da tela
+    if "relatorio_loja" in st.session_state:
+        with col_lojas:
             relatorio_loja = st.session_state["relatorio_loja"]
+            st.subheader("🏪 Relatório por Loja")
             st.dataframe(
                 relatorio_loja[["ID_Loja", "Num_Caixas", "Total_Produtos", "Tempo Total", "Tempo Médio por Caixa"]],
                 use_container_width=True
