@@ -158,7 +158,7 @@ with col_esq:
 
                 # Exibição lado a lado dos resultados e relatório por loja
                
-                col_res, col_rel = st.columns([1, 1])
+                col_res, col_rel = st.columns([2, 2])
                 
                 with col_res:
 
@@ -166,7 +166,8 @@ with col_esq:
                     st.dataframe(resultados_exibicao, use_container_width=True)  # Garante uso total da coluna
                 
                 with col_dir:
-                    
+                        st.subheader("📊 Relatório da Simulação")
+                        st.dataframe(resultados_exibicao, use_container_width=True)  # Garante uso total da coluna                    
                         st.subheader("🏪 Relatório por Loja")
                         st.dataframe(
                             relatorio_loja[["ID_Loja", "Num_Caixas", "Total_Produtos", "Tempo Total", "Tempo Médio por Caixa"]],
