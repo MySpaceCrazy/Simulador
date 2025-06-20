@@ -41,7 +41,7 @@ def formatar_tempo(segundos):
 
 # Botões e gráficos
 with col_dir:
-    ver_graficos = st.checkbox("📊 Ver gráficos e dashboards", value=True)
+    ver_graficos = st.checkbox("📊 Ver gráficos e dashboards", value=True, disabled=True)
     comparar_simulacoes = st.checkbox("🔁 Comparar com simulações anteriores", value=True, disabled=True)  # Sempre marcado e desabilitado
 
 # Inicializa session_state
