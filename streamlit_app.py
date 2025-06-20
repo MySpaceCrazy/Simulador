@@ -45,8 +45,16 @@ with col_dir:
     ver_graficos = st.checkbox("📊 Ver gráficos e dashboards", value=True)
     comparar_simulacoes = st.checkbox("🔁 Comparar com simulações anteriores")
 
+# Inicializa variáveis no session_state
+if "simulacoes_salvas" not in st.session_state:
+    st.session_state.simulacoes_salvas = {}
+
+# Armazenar dados da simulação atual após execução
+if "ultima_simulacao" not in st.session_state:
+    st.session_state.ultima_simulacao = {}
+
 # Comparativo entre Simulações - com % e resumo de caixas
-if comparar_simulacoes and "simulacoes_salvas" in st.session_state and len(st.session_state.simulacoes_salvas) > 1:
+if comparar_simulacoes and len(st.session_state.simulacoes_salvas) > 1:
     st.markdown("---")
     st.subheader("🔁 Comparativo entre Simulações")
     col_base, col_lojas = st.columns([1, 1])
@@ -93,27 +101,20 @@ if comparar_simulacoes and "simulacoes_salvas" in st.session_state and len(st.se
             st.plotly_chart(fig_comp, use_container_width=True)
 
     # Mostra o relatório na lateral direita da tela
-    if "relatorio_loja" in st.session_state:
+    if id2 in st.session_state.simulacoes_salvas:
         with col_lojas:
-            relatorio_loja = st.session_state["relatorio_loja"]
-            st.subheader("🏪 Relatório por Loja")
-            st.dataframe(
-                relatorio_loja[["ID_Loja", "Num_Caixas", "Total_Produtos", "Tempo Total", "Tempo Médio por Caixa"]],
-                use_container_width=True
-            )
+            relatorio_loja = st.session_state.simulacoes_salvas[id2].get("relatorio_loja")
+            if relatorio_loja is not None:
+                st.subheader("🏪 Relatório por Loja")
+                st.dataframe(
+                    relatorio_loja[["ID_Loja", "Num_Caixas", "Total_Produtos", "Tempo Total", "Tempo Médio por Caixa"]],
+                    use_container_width=True
+                )
 
 # Atualiza a forma de nomear a simulação
-if uploaded_file is not None:
+if uploaded_file is not None and "tempo_total" in st.session_state.ultima_simulacao:
     nome_base = Path(uploaded_file.name).stem
     data_hora = datetime.now().strftime("%Y-%m-%d_%Hh%Mmin")
     id_simulacao = f"{nome_base}_{data_hora}"
-    if "simulacoes_salvas" not in st.session_state:
-        st.session_state.simulacoes_salvas = {}
-    st.session_state.simulacoes_salvas[id_simulacao] = {
-        "tempo_total": tempo_total_simulacao,
-        "tempo_por_estacao": tempo_por_estacao,
-        "relatorio_loja": relatorio_loja,
-        "gargalo": tempo_gargalo,
-        "total_caixas": len(caixas)
-    }
+    st.session_state.simulacoes_salvas[id_simulacao] = st.session_state.ultima_simulacao
     st.success(f"✅ Simulação salva como ID: {id_simulacao}")
