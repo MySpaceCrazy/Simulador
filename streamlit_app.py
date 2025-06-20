@@ -6,6 +6,7 @@ import io
 import plotly.express as px
 from datetime import datetime
 from pathlib import Path
+import pytz
 
 st.set_page_config(page_title="Simulador de Separação", layout="wide")
 st.title("🧪 Simulador de Separação de Produtos")
@@ -39,20 +40,19 @@ def formatar_tempo(segundos):
     if segundos > 0: partes.append(f"{segundos} {'segundo' if segundos == 1 else 'segundos'}")
     return " e ".join(partes)
 
-
 # Inicializa session_state
 if "simulacoes_salvas" not in st.session_state:
     st.session_state.simulacoes_salvas = {}
 if "ultima_simulacao" not in st.session_state:
     st.session_state.ultima_simulacao = {}
+if "ordem_simulacoes" not in st.session_state:
+    st.session_state.ordem_simulacoes = []
 
 # Botão de simulação
 with col_esq:
-
-    # Botões e gráficos
     ver_graficos = st.checkbox("📊 Ver gráficos e dashboards", value=True, disabled=True)
-    comparar_simulacoes = st.checkbox("🔁 Comparar com simulações anteriores", value=True, disabled=True)  # Sempre marcado e desabilitado
-    
+    comparar_simulacoes = st.checkbox("🔁 Comparar com simulações anteriores", value=True, disabled=True)
+
     if st.button("▶️ Iniciar Simulação"):
         if uploaded_file is not None:
             try:
@@ -112,11 +112,10 @@ with col_esq:
                 resultados_exibicao = resultados_raw.copy()
                 resultados_exibicao["Tempo Total"] = resultados_exibicao["Tempo Total (s)"].apply(formatar_tempo)
 
-                # Atualiza session_state com dados para exibição e comparações futuras
                 st.session_state.ultima_simulacao = {
                     "tempo_total": tempo_total_simulacao,
                     "tempo_por_estacao": tempo_por_estacao,
-                    "relatorio_loja": None,  # atualizaremos abaixo
+                    "relatorio_loja": None,
                     "gargalo": tempo_gargalo,
                     "total_caixas": len(caixas),
                     "resultados_raw": resultados_raw,
@@ -153,24 +152,20 @@ with col_esq:
                     relatorio_loja.to_excel(writer, index=False, sheet_name='Relatório por Loja')
                 st.download_button("📥 Baixar resultados em Excel", output.getvalue(), "resultado_simulacao.xlsx")
 
-                # Exibição lado a lado dos resultados e relatório por loja
                 col_res, col_rel = st.columns([2, 2])
-                
+
                 with col_res:
                     st.subheader("📊 Resultados da Simulação")
                     st.write(f"🔚 **Tempo total para separar todas as caixas:** {formatar_tempo(tempo_total_simulacao)} — Simuladas {len(caixas)} caixas diferentes")
                     st.write(f"🧱 **Tempo até o primeiro gargalo:** {formatar_tempo(tempo_gargalo) if gargalo_ocorrido else 'Nenhum gargalo'}")
 
-                
                 with col_dir:
                     st.subheader("📊 Relatório da Simulação")
-                    st.dataframe(resultados_exibicao, use_container_width=True)  # Garante uso total da coluna  
-                
+                    st.dataframe(resultados_exibicao, use_container_width=True)
                     st.subheader("🏪 Relatório por Loja")
                     st.dataframe(
                         relatorio_loja[["ID_Loja", "Num_Caixas", "Total_Produtos", "Tempo Total", "Tempo Médio por Caixa"]],
-                        use_container_width=True) # Importante para ocupar todo espaço disponível na coluna
-
+                        use_container_width=True)
 
                 st.markdown("---")
                 st.subheader("🧠 Sugestão de Layout Otimizado")
@@ -188,13 +183,20 @@ with col_esq:
                 else:
                     st.success("🚀 Nenhuma estação sobrecarregada detectada.")
 
-                # Salvar simulação com nome baseado no arquivo + data/hora
-                if uploaded_file is not None and "tempo_total" in st.session_state.ultima_simulacao:
-                    nome_base = Path(uploaded_file.name).stem
-                    data_hora = datetime.now().strftime("%Y-%m-%d_%Hh%Mmin")
-                    id_simulacao = f"{nome_base}_{data_hora}"
-                    st.session_state.simulacoes_salvas[id_simulacao] = st.session_state.ultima_simulacao
-                    st.success(f"✅ Simulação salva como ID: {id_simulacao}")
+                # Hora corrigida e salvar simulação
+                fuso_brasil = pytz.timezone("America/Sao_Paulo")
+                data_hora = datetime.now(fuso_brasil).strftime("%Y-%m-%d_%Hh%Mmin")
+                nome_base = Path(uploaded_file.name).stem
+                id_simulacao = f"{nome_base}_{data_hora}"
+                st.session_state.simulacoes_salvas[id_simulacao] = st.session_state.ultima_simulacao
+
+                # Limita a 2 simulações
+                if len(st.session_state.simulacoes_salvas) > 2:
+                    chaves = sorted(st.session_state.simulacoes_salvas.keys())[-2:]
+                    st.session_state.simulacoes_salvas = {k: st.session_state.simulacoes_salvas[k] for k in chaves}
+                st.session_state.ordem_simulacoes = list(st.session_state.simulacoes_salvas.keys())
+
+                st.success(f"✅ Simulação salva como ID: {id_simulacao}")
 
             except Exception as e:
                 st.error(f"Erro ao processar o arquivo: {e}")
@@ -205,45 +207,34 @@ with col_esq:
 if comparar_simulacoes and len(st.session_state.simulacoes_salvas) > 1:
     st.markdown("---")
     st.subheader("🔁 Comparativo entre Simulações")
-    col_base, col_lojas = st.columns([2, 2])
 
-    with col_base:
-        ids = list(st.session_state.simulacoes_salvas.keys())
-        id1 = st.selectbox("Simulação Base", ids, index=0)
-        id2 = st.selectbox("Simulação Comparada", ids, index=1 if len(ids) > 1 else 0)
+    ids = st.session_state.get("ordem_simulacoes", list(st.session_state.simulacoes_salvas.keys()))
+    id1 = st.selectbox("Simulação Base", ids, index=0)
+    id2 = st.selectbox("Simulação Comparada", ids, index=1 if len(ids) > 1 else 0)
 
-        sim1 = st.session_state.simulacoes_salvas[id1]
-        sim2 = st.session_state.simulacoes_salvas[id2]
+    sim1 = st.session_state.simulacoes_salvas[id1]
+    sim2 = st.session_state.simulacoes_salvas[id2]
 
-        tempo1 = sim1["tempo_total"]
-        tempo2 = sim2["tempo_total"]
-        delta_tempo = tempo2 - tempo1
-        abs_pct = abs(delta_tempo / tempo1 * 100) if tempo1 else 0
-        direcao = "melhorou" if delta_tempo < 0 else "aumentou"
+    tempo1 = sim1["tempo_total"]
+    tempo2 = sim2["tempo_total"]
+    delta_tempo = tempo2 - tempo1
+    abs_pct = abs(delta_tempo / tempo1 * 100) if tempo1 else 0
+    direcao = "melhorou" if delta_tempo < 0 else "aumentou"
 
-        caixas1 = sim1.get("total_caixas", 0)
-        caixas2 = sim2.get("total_caixas", 0)
-        caixas_diferenca = caixas2 - caixas1
-        caixas_pct = (caixas_diferenca / caixas1 * 100) if caixas1 else 0
+    caixas1 = sim1.get("total_caixas", 0)
+    caixas2 = sim2.get("total_caixas", 0)
+    caixas_diferenca = caixas2 - caixas1
+    caixas_pct = (caixas_diferenca / caixas1 * 100) if caixas1 else 0
 
-        tempo_formatado = formatar_tempo(abs(delta_tempo))
-        st.metric("Delta de Tempo Total", f"{tempo_formatado}", f"{delta_tempo:+.0f}s ({abs_pct:.1f}% {direcao})")
-        st.write(f"📦 **Caixas Base:** {caixas1} | **Comparada:** {caixas2} | Δ {caixas_diferenca:+} caixas ({caixas_pct:+.1f}%)")
+    tempo_formatado = formatar_tempo(abs(delta_tempo))
+    st.metric("Delta de Tempo Total", f"{tempo_formatado}", f"{delta_tempo:+.0f}s ({abs_pct:.1f}% {direcao})")
+    st.write(f"📦 **Caixas Base:** {caixas1} | **Comparada:** {caixas2} | Δ {caixas_diferenca:+} caixas ({caixas_pct:+.1f}%)")
 
-        df1 = pd.DataFrame([{"Estação": est, "Tempo (s)": tempo, "Simulação": id1} for est, tempo in sim1["tempo_por_estacao"].items()])
-        df2 = pd.DataFrame([{"Estação": est, "Tempo (s)": tempo, "Simulação": id2} for est, tempo in sim2["tempo_por_estacao"].items()])
-        df_comp = pd.concat([df1, df2])
+    df1 = pd.DataFrame([{ "Estação": est, "Tempo (s)": tempo, "Simulação": id1 } for est, tempo in sim1["tempo_por_estacao"].items()])
+    df2 = pd.DataFrame([{ "Estação": est, "Tempo (s)": tempo, "Simulação": id2 } for est, tempo in sim2["tempo_por_estacao"].items()])
+    df_comp = pd.concat([df1, df2])
 
-# 👉 Gráfico em tela cheia (fora das colunas)
-if not df_comp.empty:
-    st.markdown("### 📊 Comparativo de Tempo por Estação (Total)")
-    fig_comp = px.bar(df_comp, x="Estação", y="Tempo (s)", color="Simulação", barmode="group")
-    st.plotly_chart(fig_comp, use_container_width=True)
-
-    
-    with col_lojas:
-
-        # Opcional: pode mostrar algo mais, por enquanto deixamos vazio para evitar repetição
-        pass
-
-
+    if not df_comp.empty:
+        st.markdown("### 📊 Comparativo de Tempo por Estação (Total)")
+        fig_comp = px.bar(df_comp, x="Estação", y="Tempo (s)", color="Simulação", barmode="group")
+        st.plotly_chart(fig_comp, use_container_width=True)
