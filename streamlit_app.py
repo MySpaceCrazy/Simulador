@@ -188,6 +188,14 @@ with col_esq:
                 else:
                     st.success("🚀 Nenhuma estação sobrecarregada detectada.")
 
+                # Salvar simulação com nome baseado no arquivo + data/hora
+                if uploaded_file is not None and "tempo_total" in st.session_state.ultima_simulacao:
+                    nome_base = Path(uploaded_file.name).stem
+                    data_hora = datetime.now().strftime("%Y-%m-%d_%Hh%Mmin")
+                    id_simulacao = f"{nome_base}_{data_hora}"
+                    st.session_state.simulacoes_salvas[id_simulacao] = st.session_state.ultima_simulacao
+                    st.success(f"✅ Simulação salva como ID: {id_simulacao}")
+
             except Exception as e:
                 st.error(f"Erro ao processar o arquivo: {e}")
         else:
@@ -238,10 +246,4 @@ if comparar_simulacoes and len(st.session_state.simulacoes_salvas) > 1:
         # Opcional: pode mostrar algo mais, por enquanto deixamos vazio para evitar repetição
         pass
 
-# Salvar simulação com nome baseado no arquivo + data/hora
-if uploaded_file is not None and "tempo_total" in st.session_state.ultima_simulacao:
-    nome_base = Path(uploaded_file.name).stem
-    data_hora = datetime.now().strftime("%Y-%m-%d_%Hh%Mmin")
-    id_simulacao = f"{nome_base}_{data_hora}"
-    st.session_state.simulacoes_salvas[id_simulacao] = st.session_state.ultima_simulacao
-    st.success(f"✅ Simulação salva como ID: {id_simulacao}")
+
