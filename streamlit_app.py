@@ -109,7 +109,7 @@ with col_esq:
                 resultados_exibicao["Tempo Total"] = resultados_exibicao["Tempo Total (s)"].apply(formatar_tempo)
 
                 st.subheader("📊 Resultados da Simulação")
-                st.write(f"🖚 **Tempo total para separar todas as caixas:** {formatar_tempo(tempo_total_simulacao)} — Simuladas {len(caixas)} caixas diferentes")
+                st.write(f"🔚 **Tempo total para separar todas as caixas:** {formatar_tempo(tempo_total_simulacao)} — Simuladas {len(caixas)} caixas diferentes")
                 st.write(f"🧱 **Tempo até o primeiro gargalo:** {formatar_tempo(tempo_gargalo) if gargalo_ocorrido else 'Nenhum gargalo'}")
                 st.dataframe(resultados_exibicao)
 
@@ -143,7 +143,7 @@ with col_esq:
                 with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
                     resultados_raw.to_excel(writer, index=False, sheet_name='Resultados')
                     relatorio_loja.to_excel(writer, index=False, sheet_name='Relatório por Loja')
-                st.download_button("📅 Baixar resultados em Excel", output.getvalue(), "resultado_simulacao.xlsx")
+                st.download_button("📥 Baixar resultados em Excel", output.getvalue(), "resultado_simulacao.xlsx")
 
                 id_simulacao = str(uuid.uuid4())[:8]
                 if "simulacoes_salvas" not in st.session_state:
@@ -152,7 +152,8 @@ with col_esq:
                     "tempo_total": tempo_total_simulacao,
                     "tempo_por_estacao": tempo_por_estacao,
                     "relatorio_loja": relatorio_loja,
-                    "gargalo": tempo_gargalo
+                    "gargalo": tempo_gargalo,
+                    "total_caixas": len(caixas)
                 }
                 st.success(f"✅ Simulação salva como ID: {id_simulacao}")
 
@@ -184,28 +185,7 @@ with col_esq:
         else:
             st.warning("⚠️ Por favor, envie um arquivo Excel para prosseguir com a simulação.")
 
-# Dashboards Visuais
-if ver_graficos and "dados_simulacao" in st.session_state:
-    with col_dir:
-        st.subheader("📈 Dashboards Visuais")
-        tempo_por_estacao = st.session_state["dados_simulacao"]["tempo_por_estacao"]
-
-        estacoes_df = pd.DataFrame([
-            {"Estação": est, "Tempo Total (s)": tempo} for est, tempo in tempo_por_estacao.items()
-        ]).sort_values(by="Tempo Total (s)", ascending=False)
-        estacoes_df["Tempo Formatado"] = estacoes_df["Tempo Total (s)"].apply(formatar_tempo)
-
-        fig1 = px.bar(
-            estacoes_df,
-            x="Estação",
-            y="Tempo Total (s)",
-            title="🏭 Estações mais utilizadas (tempo total)",
-            labels={"Tempo Total (s)": "Tempo (s)"},
-            hover_data={"Tempo Formatado": True, "Tempo Total (s)": False}
-        )
-        st.plotly_chart(fig1, use_container_width=True)
-
-# Comparativo de Simulações
+# Comparativo entre Simulações - com % e resumo de caixas
 if comparar_simulacoes and "simulacoes_salvas" in st.session_state and len(st.session_state.simulacoes_salvas) > 1:
     st.markdown("---")
     st.subheader("🔁 Comparativo entre Simulações")
@@ -217,15 +197,11 @@ if comparar_simulacoes and "simulacoes_salvas" in st.session_state and len(st.se
     sim2 = st.session_state.simulacoes_salvas[id2]
 
     delta_tempo = sim2["tempo_total"] - sim1["tempo_total"]
-    st.metric("Delta de Tempo Total", formatar_tempo(delta_tempo), delta=f"{round(delta_tempo)}s")
+    pct = (delta_tempo / sim1["tempo_total"] * 100) if sim1["tempo_total"] else 0
 
-    est_df = pd.DataFrame.from_dict({
-        "Estação": list(set(sim1["tempo_por_estacao"].keys()).union(sim2["tempo_por_estacao"].keys())),
-        "Tempo Sim 1": [sim1["tempo_por_estacao"].get(k, 0) for k in sim1["tempo_por_estacao"]],
-        "Tempo Sim 2": [sim2["tempo_por_estacao"].get(k, 0) for k in sim2["tempo_por_estacao"]],
-    }, orient='columns')
-    est_df = est_df.fillna(0)
-    fig2 = px.bar(est_df.melt(id_vars=["Estação"], var_name="Simulação", value_name="Tempo (s)"),
-                  x="Estação", y="Tempo (s)", color="Simulação",
-                  barmode="group", title="Comparativo por Estação")
-    st.plotly_chart(fig2, use_container_width=True)
+    caixas1 = sim1.get("total_caixas", 0)
+    caixas2 = sim2.get("total_caixas", 0)
+    caixas_diferenca = caixas2 - caixas1
+
+    st.metric("Delta de Tempo Total", formatar_tempo(delta_tempo), f"{delta_tempo:.0f}s ({pct:.1f}%)")
+    st.write(f"📦 Simulação Base: {caixas1} caixas | Comparada: {caixas2} caixas | Diferença: {caixas_diferenca:+}")
