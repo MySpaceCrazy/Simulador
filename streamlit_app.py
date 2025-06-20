@@ -1,3 +1,4 @@
+# streamlit_simulador.py
 import streamlit as st
 import pandas as pd
 from collections import defaultdict
