@@ -151,7 +151,9 @@ with col_esq:
                     resultados_raw.to_excel(writer, index=False, sheet_name='Resultados')
                     relatorio_loja.to_excel(writer, index=False, sheet_name='Relatório por Loja')
                 st.download_button("📥 Baixar resultados em Excel", output.getvalue(), "resultado_simulacao.xlsx")
-
+                st.subheader("📊 Resultados da Simulação")
+                st.write(f"🔚 **Tempo total para separar todas as caixas:** {formatar_tempo(tempo_total_simulacao)} — Simuladas {len(caixas)} caixas diferentes")
+                st.write(f"🧱 **Tempo até o primeiro gargalo:** {formatar_tempo(tempo_gargalo) if gargalo_ocorrido else 'Nenhum gargalo'}")
                 st.markdown("---")
 
                 # Exibição lado a lado dos resultados e relatório por loja
@@ -159,9 +161,7 @@ with col_esq:
                 col_res, col_rel = st.columns([1, 1])
                 
                 with col_res:
-                    st.subheader("📊 Resultados da Simulação")
-                    st.write(f"🔚 **Tempo total para separar todas as caixas:** {formatar_tempo(tempo_total_simulacao)} — Simuladas {len(caixas)} caixas diferentes")
-                    st.write(f"🧱 **Tempo até o primeiro gargalo:** {formatar_tempo(tempo_gargalo) if gargalo_ocorrido else 'Nenhum gargalo'}")
+
                     st.subheader("📊 Relatório da Simulação")
                     st.dataframe(resultados_exibicao, use_container_width=True)  # Garante uso total da coluna
                 
