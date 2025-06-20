@@ -92,10 +92,6 @@ with col_esq:
                         inicio = max(disponibilidade_estacao[estacao][idx_pessoa_livre], tempo_inicio_caixa)
                         fim = inicio + duracao
 
-                        # Corrigido: verificar se a estação está cheia antes de atualizar
-                        # capacidade_estacao refere-se ao número máximo de caixas na estação,
-                        # Aqui o controle por pessoa/livre deve ser separado.
-                        # Para simplificar, vamos apenas sinalizar o gargalo se o número de caixas exceder capacidade_estacao
                         if len(disponibilidade_estacao[estacao]) >= capacidade_estacao and not gargalo_ocorrido and inicio > 0:
                             gargalo_ocorrido = True
                             tempo_gargalo = inicio
@@ -165,6 +161,7 @@ with col_esq:
                     st.subheader("📊 Resultados da Simulação")
                     st.write(f"🔚 **Tempo total para separar todas as caixas:** {formatar_tempo(tempo_total_simulacao)} — Simuladas {len(caixas)} caixas diferentes")
                     st.write(f"🧱 **Tempo até o primeiro gargalo:** {formatar_tempo(tempo_gargalo) if gargalo_ocorrido else 'Nenhum gargalo'}")
+                    st.subheader("📊 Relatório da Simulação")
                     st.dataframe(resultados_exibicao)
 
                 with col_rel:
