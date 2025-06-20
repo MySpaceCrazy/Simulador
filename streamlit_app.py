@@ -21,7 +21,7 @@ with col_esq:
     capacidade_estacao = st.number_input("📦 Capacidade máxima de caixas simultâneas por estação", value=10, min_value=1)
     pessoas_por_estacao = st.number_input("👷‍♂️ Número de pessoas por estação", value=1.0, min_value=0.01, step=0.1, format="%.2f")
     tempo_adicional_caixa = st.number_input("➕ Tempo adicional por caixa (s)", value=0.0, step=1.0, format="%.2f")
-    uploaded_file = st.file_uploader("📂 Faça upload do arquivo Excel com os dados", type=["xlsx"])
+    uploaded_file = st.file_uploader("📂 Arquivo para Simulação", type=["xlsx"], key="upload_simulacao")
 
 # Função auxiliar para formatar tempo
 def formatar_tempo(segundos):
@@ -48,10 +48,15 @@ if "ultima_simulacao" not in st.session_state:
 if "ordem_simulacoes" not in st.session_state:
     st.session_state.ordem_simulacoes = []
 
+# Upload para comparação externo
+st.markdown("---")
+st.subheader("📁 Comparação com Outro Arquivo Excel (Opcional)")
+uploaded_comp = st.file_uploader("📁 Arquivo para Comparação", type=["xlsx"], key="upload_comparacao")
+
 # Botão de simulação
 with col_esq:
     ver_graficos = st.checkbox("📊 Ver gráficos e dashboards", value=True, disabled=True)
-    comparar_simulacoes = st.checkbox("🔁 Comparar com simulações anteriores", value=True, disabled=True)
+    comparar_simulacoes = st.checkbox("🔁 Comparar com simulações anteriores", value=True)
 
     if st.button("▶️ Iniciar Simulação"):
         if uploaded_file is not None:
@@ -183,14 +188,12 @@ with col_esq:
                 else:
                     st.success("🚀 Nenhuma estação sobrecarregada detectada.")
 
-                # Hora corrigida e salvar simulação
                 fuso_brasil = pytz.timezone("America/Sao_Paulo")
                 data_hora = datetime.now(fuso_brasil).strftime("%Y-%m-%d_%Hh%Mmin")
                 nome_base = Path(uploaded_file.name).stem
                 id_simulacao = f"{nome_base}_{data_hora}"
                 st.session_state.simulacoes_salvas[id_simulacao] = st.session_state.ultima_simulacao
 
-                # Limita a 2 simulações
                 if len(st.session_state.simulacoes_salvas) > 2:
                     chaves = sorted(st.session_state.simulacoes_salvas.keys())[-2:]
                     st.session_state.simulacoes_salvas = {k: st.session_state.simulacoes_salvas[k] for k in chaves}
@@ -203,40 +206,56 @@ with col_esq:
         else:
             st.warning("⚠️ Por favor, envie um arquivo Excel para prosseguir com a simulação.")
 
-# Comparativo entre Simulações
-if comparar_simulacoes and len(st.session_state.simulacoes_salvas) > 1:
+if comparar_simulacoes and (len(st.session_state.simulacoes_salvas) > 1 or uploaded_comp is not None):
     st.markdown("---")
     st.subheader("🔁 Comparativo entre Simulações")
 
     ids = st.session_state.get("ordem_simulacoes", list(st.session_state.simulacoes_salvas.keys()))
     id1 = st.selectbox("Simulação Base Anterior", ids, index=0)
-    id2 = st.selectbox("Simulação Base Atual", ids, index=1 if len(ids) > 1 else 0)
+
+    if uploaded_comp is not None:
+        try:
+            df_comp_ext = pd.read_excel(uploaded_comp)
+            df_comp_ext = df_comp_ext.sort_values(by=["ID_Pacote", "ID_Caixas"])
+            caixas_ext = df_comp_ext["ID_Caixas"].unique()
+            tempo_estacao_ext = defaultdict(float)
+
+            for caixa in caixas_ext:
+                caixa_df = df_comp_ext[df_comp_ext["ID_Caixas"] == caixa]
+                for _, linha in caixa_df.iterrows():
+                    estacao = linha["Estação"]
+                    contagem = linha["Contagem de Produto"]
+                    tempo = (contagem * tempo_produto) / pessoas_por_estacao + tempo_deslocamento
+                    tempo_estacao_ext[estacao] += tempo
+
+            df2 = pd.DataFrame([
+                {"Estação": est, "Tempo (s)": tempo, "Simulação": "Arquivo Comparado"}
+                for est, tempo in tempo_estacao_ext.items()
+            ])
+            sim2_label = "Arquivo Comparado"
+        except Exception as e:
+            st.error(f"Erro ao processar arquivo de comparação: {e}")
+            df2 = pd.DataFrame()
+            sim2_label = "Erro"
+    else:
+        sim2 = st.session_state.simulacoes_salvas[ids[1] if len(ids) > 1 else 0]
+        tempo_estacao_2 = sim2["tempo_por_estacao"]
+        df2 = pd.DataFrame([
+            {"Estação": est, "Tempo (s)": tempo, "Simulação": ids[1] if len(ids) > 1 else 0}
+            for est, tempo in tempo_estacao_2.items()
+        ])
+        sim2_label = ids[1] if len(ids) > 1 else 0
 
     sim1 = st.session_state.simulacoes_salvas[id1]
-    sim2 = st.session_state.simulacoes_salvas[id2]
+    tempo_estacao_1 = sim1["tempo_por_estacao"]
+    df1 = pd.DataFrame([
+        {"Estação": est, "Tempo (s)": tempo, "Simulação": id1}
+        for est, tempo in tempo_estacao_1.items()
+    ])
 
-    tempo1 = sim1["tempo_total"]
-    tempo2 = sim2["tempo_total"]
-    delta_tempo = tempo2 - tempo1
-    abs_pct = abs(delta_tempo / tempo1 * 100) if tempo1 else 0
-    direcao = "melhorou" if delta_tempo < 0 else "aumentou"
+    df_comp = pd.concat([df1, df2], ignore_index=True)
 
-    caixas1 = sim1.get("total_caixas", 0)
-    caixas2 = sim2.get("total_caixas", 0)
-    caixas_diferenca = caixas2 - caixas1
-    caixas_pct = (caixas_diferenca / caixas1 * 100) if caixas1 else 0
-
-    tempo_formatado = formatar_tempo(abs(delta_tempo))
-    st.metric("Delta de Tempo Total", f"{tempo_formatado}", f"{delta_tempo:+.0f}s ({abs_pct:.1f}% {direcao})")
-    st.write(f"📦 **Caixas Base:** {caixas1} | **Comparada:** {caixas2} | Δ {caixas_diferenca:+} caixas ({caixas_pct:+.1f}%)")
-
-    df1 = pd.DataFrame([{ "Estação": est, "Tempo (s)": tempo, "Simulação": id1 } for est, tempo in sim1["tempo_por_estacao"].items()])
-    df2 = pd.DataFrame([{ "Estação": est, "Tempo (s)": tempo, "Simulação": id2 } for est, tempo in sim2["tempo_por_estacao"].items()])
-    df_comp = pd.concat([df1, df2])
-
-# 👉 Gráfico em tela cheia (fora das colunas)
-if 'df_comp' in locals() and not df_comp.empty:
-    st.markdown("### 📊 Comparativo de Tempo por Estação (Total)")
-    fig_comp = px.bar(df_comp, x="Estação", y="Tempo (s)", color="Simulação", barmode="group")
-    st.plotly_chart(fig_comp, use_container_width=True)
-
+    if not df_comp.empty:
+        st.markdown("### 📊 Comparativo de Tempo por Estação (Total)")
+        fig_comp = px.bar(df_comp, x="Estação", y="Tempo (s)", color="Simulação", barmode="group")
+        st.plotly_chart(fig_comp, use_container_width=True)
