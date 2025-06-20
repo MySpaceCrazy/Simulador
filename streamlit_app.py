@@ -234,7 +234,9 @@ if comparar_simulacoes and len(st.session_state.simulacoes_salvas) > 1:
     df2 = pd.DataFrame([{ "Estação": est, "Tempo (s)": tempo, "Simulação": id2 } for est, tempo in sim2["tempo_por_estacao"].items()])
     df_comp = pd.concat([df1, df2])
 
-if not df_comp.empty:
+# 👉 Gráfico em tela cheia (fora das colunas)
+if 'df_comp' in locals() and not df_comp.empty:
     st.markdown("### 📊 Comparativo de Tempo por Estação (Total)")
     fig_comp = px.bar(df_comp, x="Estação", y="Tempo (s)", color="Simulação", barmode="group")
     st.plotly_chart(fig_comp, use_container_width=True)
+
