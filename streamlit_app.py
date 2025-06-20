@@ -169,8 +169,8 @@ with col_esq:
                     st.subheader("🏪 Relatório por Loja")
                     st.dataframe(
                         relatorio_loja[["ID_Loja", "Num_Caixas", "Total_Produtos", "Tempo Total", "Tempo Médio por Caixa"]],
-                        use_container_width=True  # Importante para ocupar todo espaço disponível na coluna
-                )
+                        use_container_width=True) # Importante para ocupar todo espaço disponível na coluna
+                    st.markdown("---")
 
 
                 st.markdown("---")
