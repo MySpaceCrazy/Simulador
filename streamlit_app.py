@@ -4,7 +4,6 @@ import pandas as pd
 from collections import defaultdict
 import io
 import plotly.express as px
-import uuid
 from datetime import datetime
 from pathlib import Path
 
@@ -43,7 +42,7 @@ def formatar_tempo(segundos):
 # Botões e gráficos
 with col_dir:
     ver_graficos = st.checkbox("📊 Ver gráficos e dashboards", value=True)
-    comparar_simulacoes = st.checkbox("🔁 Comparar com simulações anteriores")
+    comparar_simulacoes = st.checkbox("🔁 Comparar com simulações anteriores", value=True, disabled=True)  # Sempre marcado e desabilitado
 
 # Inicializa session_state
 if "simulacoes_salvas" not in st.session_state:
@@ -93,7 +92,11 @@ with col_esq:
                         inicio = max(disponibilidade_estacao[estacao][idx_pessoa_livre], tempo_inicio_caixa)
                         fim = inicio + duracao
 
-                        if disponibilidade_estacao[estacao].count(inicio) >= capacidade_estacao and not gargalo_ocorrido:
+                        # Corrigido: verificar se a estação está cheia antes de atualizar
+                        # capacidade_estacao refere-se ao número máximo de caixas na estação,
+                        # Aqui o controle por pessoa/livre deve ser separado.
+                        # Para simplificar, vamos apenas sinalizar o gargalo se o número de caixas exceder capacidade_estacao
+                        if len(disponibilidade_estacao[estacao]) >= capacidade_estacao and not gargalo_ocorrido and inicio > 0:
                             gargalo_ocorrido = True
                             tempo_gargalo = inicio
 
@@ -112,10 +115,16 @@ with col_esq:
                 resultados_exibicao = resultados_raw.copy()
                 resultados_exibicao["Tempo Total"] = resultados_exibicao["Tempo Total (s)"].apply(formatar_tempo)
 
-                st.subheader("📊 Resultados da Simulação")
-                st.write(f"🔚 **Tempo total para separar todas as caixas:** {formatar_tempo(tempo_total_simulacao)} — Simuladas {len(caixas)} caixas diferentes")
-                st.write(f"🧱 **Tempo até o primeiro gargalo:** {formatar_tempo(tempo_gargalo) if gargalo_ocorrido else 'Nenhum gargalo'}")
-                st.dataframe(resultados_exibicao)
+                # Atualiza session_state com dados para exibição e comparações futuras
+                st.session_state.ultima_simulacao = {
+                    "tempo_total": tempo_total_simulacao,
+                    "tempo_por_estacao": tempo_por_estacao,
+                    "relatorio_loja": None,  # atualizaremos abaixo
+                    "gargalo": tempo_gargalo,
+                    "total_caixas": len(caixas),
+                    "resultados_raw": resultados_raw,
+                    "resultados_exibicao": resultados_exibicao
+                }
 
                 df_lojas = df[df["ID_Caixas"].isin(caixas_ordenadas)]
 
@@ -139,9 +148,7 @@ with col_esq:
                 relatorio_loja["Tempo Médio por Caixa"] = relatorio_loja["Tempo_Médio_por_Caixa_s"].apply(formatar_tempo)
                 relatorio_loja = relatorio_loja.sort_values(by="Tempo_Total_s", ascending=False)
 
-                st.markdown("---")
-                st.subheader("🏪 Relatório por Loja")
-                st.dataframe(relatorio_loja[["ID_Loja", "Num_Caixas", "Total_Produtos", "Tempo Total", "Tempo Médio por Caixa"]])
+                st.session_state.ultima_simulacao["relatorio_loja"] = relatorio_loja
 
                 output = io.BytesIO()
                 with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
@@ -149,13 +156,20 @@ with col_esq:
                     relatorio_loja.to_excel(writer, index=False, sheet_name='Relatório por Loja')
                 st.download_button("📥 Baixar resultados em Excel", output.getvalue(), "resultado_simulacao.xlsx")
 
-                st.session_state.ultima_simulacao = {
-                    "tempo_total": tempo_total_simulacao,
-                    "tempo_por_estacao": tempo_por_estacao,
-                    "relatorio_loja": relatorio_loja,
-                    "gargalo": tempo_gargalo,
-                    "total_caixas": len(caixas)
-                }
+                st.markdown("---")
+
+                # Exibição lado a lado dos resultados e relatório por loja
+                col_res, col_rel = st.columns([2, 2])
+
+                with col_res:
+                    st.subheader("📊 Resultados da Simulação")
+                    st.write(f"🔚 **Tempo total para separar todas as caixas:** {formatar_tempo(tempo_total_simulacao)} — Simuladas {len(caixas)} caixas diferentes")
+                    st.write(f"🧱 **Tempo até o primeiro gargalo:** {formatar_tempo(tempo_gargalo) if gargalo_ocorrido else 'Nenhum gargalo'}")
+                    st.dataframe(resultados_exibicao)
+
+                with col_rel:
+                    st.subheader("🏪 Relatório por Loja")
+                    st.dataframe(relatorio_loja[["ID_Loja", "Num_Caixas", "Total_Produtos", "Tempo Total", "Tempo Médio por Caixa"]], use_container_width=True)
 
                 st.markdown("---")
                 st.subheader("🧠 Sugestão de Layout Otimizado")
@@ -216,10 +230,8 @@ if comparar_simulacoes and len(st.session_state.simulacoes_salvas) > 1:
             st.plotly_chart(fig_comp, use_container_width=True)
 
     with col_lojas:
-        relatorio_loja = sim2.get("relatorio_loja")
-        if relatorio_loja is not None:
-            st.subheader("🏪 Relatório por Loja")
-            st.dataframe(relatorio_loja[["ID_Loja", "Num_Caixas", "Total_Produtos", "Tempo Total", "Tempo Médio por Caixa"]], use_container_width=True)
+        # Opcional: pode mostrar algo mais, por enquanto deixamos vazio para evitar repetição
+        pass
 
 # Salvar simulação com nome baseado no arquivo + data/hora
 if uploaded_file is not None and "tempo_total" in st.session_state.ultima_simulacao:
