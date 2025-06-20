@@ -29,11 +29,16 @@ def formatar_tempo(segundos):
     horas = int(segundos // 3600)
     segundos %= 3600
     minutos = int(segundos // 60)
+    segundos = int(round(segundos % 60))  # segundos restantes
+
     partes = []
     if dias > 0: partes.append(f"{dias} {'dia' if dias == 1 else 'dias'}")
     if horas > 0: partes.append(f"{horas} {'hora' if horas == 1 else 'horas'}")
     if minutos > 0: partes.append(f"{minutos} {'minuto' if minutos == 1 else 'minutos'}")
+    if segundos > 0: partes.append(f"{segundos} {'segundo' if segundos == 1 else 'segundos'}")
+
     return " e ".join(partes)
+
 
 # Botão do gráfico sempre marcado
 with col_dir:
