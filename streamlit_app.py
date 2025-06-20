@@ -165,11 +165,12 @@ with col_esq:
                     st.subheader("📊 Relatório da Simulação")
                     st.dataframe(resultados_exibicao, use_container_width=True)  # Garante uso total da coluna
                 
-                with col_rel:
-                    st.subheader("🏪 Relatório por Loja")
-                    st.dataframe(
-                        relatorio_loja[["ID_Loja", "Num_Caixas", "Total_Produtos", "Tempo Total", "Tempo Médio por Caixa"]],
-                        use_container_width=True  # Importante para ocupar todo espaço disponível na coluna
+                with col_dir:
+                    with col_rel:
+                        st.subheader("🏪 Relatório por Loja")
+                        st.dataframe(
+                            relatorio_loja[["ID_Loja", "Num_Caixas", "Total_Produtos", "Tempo Total", "Tempo Médio por Caixa"]],
+                            use_container_width=True  # Importante para ocupar todo espaço disponível na coluna
                     )
 
 
