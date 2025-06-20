@@ -187,16 +187,13 @@ with col_esq:
 
 # (mesmo início do código anterior até a seção de comparação...)
 
-# (mesmo início do código anterior até a seção de comparação...)
-
-# (mesmo início do código anterior até a seção de comparação...)
-
 # Comparativo entre Simulações - com % e resumo de caixas
 if comparar_simulacoes and "simulacoes_salvas" in st.session_state and len(st.session_state.simulacoes_salvas) > 1:
+    st.markdown("---")
+    st.subheader("🔁 Comparativo entre Simulações")
     col_base, col_lojas = st.columns([2, 2])
+
     with col_base:
-        st.markdown("---")
-        st.subheader("🔁 Comparativo entre Simulações")
         ids = list(st.session_state.simulacoes_salvas.keys())
         id1 = st.selectbox("Simulação Base", ids, index=0)
         id2 = st.selectbox("Simulação Comparada", ids, index=1 if len(ids) > 1 else 0)
@@ -239,7 +236,5 @@ if comparar_simulacoes and "simulacoes_salvas" in st.session_state and len(st.se
 
     with col_lojas:
         if "relatorio_loja" in sim2:
-            st.markdown("---")
             st.subheader("🏪 Relatório por Loja (Simulação Comparada)")
-            st.dataframe(sim2["relatorio_loja"][["ID_Loja", "Num_Caixas", "Total_Produtos", "Tempo Total", "Tempo Médio por Caixa"]])
-
+            st.dataframe(sim2["relatorio_loja"]["ID_Loja Num_Caixas Total_Produtos Tempo Total Tempo Médio por Caixa".split()])
