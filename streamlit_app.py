@@ -9,7 +9,7 @@ from pathlib import Path
 import pytz
 
 st.set_page_config(page_title="Simulador de Separação", layout="wide")
-st.title("🔪 Simulador de Separação de Produtos")
+st.title("🧪 Simulador de Separação de Produtos")
 
 # Colunas principais
 col_esq, col_dir = st.columns([2, 2])
