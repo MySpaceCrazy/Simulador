@@ -151,10 +151,15 @@ if arquivo:
         df_resultado = pd.DataFrame(resultado)
 
         # --- Relatório Resumo por Produto e Estrutura ---
+       
+        df_posicao_bin_corrigido = df_posicao_bin.rename(columns={"Tipo_de_depósito": "Estrutura"})
+
         df_resumo = df_resultado.merge(
-            df_posicao_bin[["Posicao", "Tipo_de_depósito", "Estrutura"]].drop_duplicates(),
-            how="left", left_on=["Posicao", "Estrutura"], right_on=["Posicao", "Tipo_de_depósito"]
+            df_posicao_bin_corrigido[["Posicao", "Estrutura"]].drop_duplicates(),
+            how="left",
+            on=["Posicao", "Estrutura"]
         )
+
         df_resumo = df_resumo.merge(
             df_posicoes_prod[["Produto", "Descrição breve do produto"]].drop_duplicates(),
             on="Produto", how="left"
