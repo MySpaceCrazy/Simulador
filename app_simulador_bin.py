@@ -178,7 +178,18 @@ if arquivo:
             "Volumetria_Máxima"
         ]]
 
-        df_resumo = df_resumo.rename(columns={"Estrutura": "Descrição - estrutura"})
+        df_resumo = df_resumo.rename(columns={
+        "Posicao": "Posição",
+        "Produto": "Produto",
+        "Tipo_Bin": "Tipo_Bin",
+        "Bins_Necessarias": "Bins_Necessarias",
+        "Bins_Disponiveis": "Bins_Disponiveis",
+        "Diferença": "Diferença",
+        "Quantidade_Total": "Quantidade Total",
+        "Volume_Total": "Volume Total",
+        "Volumetria_Máxima": "Volumetria Máxima"
+})
+
 
         df_resumo.columns = [
             "Estrutura_Codigo", "Descrição - estrutura", "Posição", "Produto",
