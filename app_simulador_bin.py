@@ -21,12 +21,14 @@ for tabela, nome_arquivo in ARQUIVOS_CSV.items():
     caminho = os.path.join(PASTA_CSV, nome_arquivo)
     if os.path.exists(caminho):
         try:
-            df = pd.read_csv(caminho, sep=";", engine="python", encoding="latin1")
+            df = pd.read_csv(caminho, sep=";", encoding="latin1")
             df.columns = [c.strip().replace(" ", "_") for c in df.columns]
 
             if tabela == "info_tipo_bin" and "Volume_(L)" in df.columns:
-                df["Volume_(L)"] = df["Volume_(L)"].astype(str).str.replace(",", ".", regex=False)
-                df["Volume_(L)"] = pd.to_numeric(df["Volume_(L)"], errors="coerce").fillna(0)
+                df["Volume_(L)"] = pd.to_numeric(
+                    df["Volume_(L)"].astype(str).str.replace(",", ".", regex=False),
+                    errors="coerce"
+                ).fillna(0)
 
             df.to_sql(tabela, conn, if_exists="replace", index=False)
             print(f"🔄 Atualizado: {tabela}")
@@ -38,37 +40,36 @@ for tabela, nome_arquivo in ARQUIVOS_CSV.items():
 conn.close()
 print("✅ Banco logistica.db atualizado com sucesso.")
 
-# --- Configuração inicial ---
+# --- Streamlit Config ---
 st.set_page_config(page_title="Simulador de Bins de Picking", page_icon="📦", layout="wide")
 st.title("📦 Simulador de Quantidade de Bins por Posição de Picking")
 
-# --- Upload do arquivo do cliente ---
+# --- Upload Excel ---
 arquivo = st.file_uploader("📂 Selecionar arquivo de simulação (.xlsx)", type=["xlsx"])
 
 if arquivo:
     try:
         inicio_tempo = time.time()
+
         df_base = pd.read_excel(arquivo, sheet_name="base_item_pacotes")
         df_posicoes_prod = pd.read_excel(arquivo, sheet_name="info_posicao_produtos")
 
         total_linhas_base = len(df_base)
         contador_sucesso = 0
 
-        # --- Validação ---
-        colunas_obrigatorias_base = ["Produto", "Qtd.solicitada total", "Recebedor mercadoria", "Peso", "UM peso", "Volume", "UM volume", "Área de atividade"]
-        colunas_obrigatorias_pos = ["Posição no depósito", "Tipo de depósito", "Área armazmto", "Produto"]
+        colunas_base = ["Produto", "Qtd.solicitada total", "Recebedor mercadoria", "Peso", "UM peso", "Volume", "UM volume", "Área de atividade"]
+        colunas_pos = ["Posição no depósito", "Tipo de depósito", "Área armazmto", "Produto"]
 
-        for col in colunas_obrigatorias_base:
+        for col in colunas_base:
             if col not in df_base.columns:
-                st.error(f"Coluna obrigatória ausente na base_item_pacotes: {col}")
+                st.error(f"Coluna ausente: {col}")
                 st.stop()
-
-        for col in colunas_obrigatorias_pos:
+        for col in colunas_pos:
             if col not in df_posicoes_prod.columns:
-                st.error(f"Coluna obrigatória ausente na info_posicao_produtos: {col}")
+                st.error(f"Coluna ausente: {col}")
                 st.stop()
 
-        # --- Ajustes e normalizações ---
+        # --- Ajustes Base ---
         df_base["Recebedor mercadoria"] = df_base["Recebedor mercadoria"].astype(str).str.zfill(5)
         df_base["Tipo_de_depósito"] = df_base["Área de atividade"].astype(str).str[:2].str.zfill(4)
         df_base["Peso"] = pd.to_numeric(df_base["Peso"], errors="coerce").fillna(0)
@@ -78,19 +79,17 @@ if arquivo:
         df_base.loc[df_base["UM volume"] == "ML", "Volume"] /= 1000
         df_base["Volume unitário (L)"] = df_base["Volume"] / df_base["Qtd.solicitada total"]
 
-        # --- Lê tabelas do banco ---
+        # --- Lê Tabelas Banco ---
         conn = sqlite3.connect("logistica.db")
         df_tipo_bin = pd.read_sql("SELECT * FROM info_tipo_bin", conn)
         df_posicao_bin = pd.read_sql("SELECT * FROM info_posicao_bin", conn)
         conn.close()
 
-        # --- Renomeia e normaliza colunas ---
-        df_posicoes_prod = df_posicoes_prod.rename(columns={"Posição no depósito": "Posicao", "Tipo de depósito": "Tipo_de_depósito"})
-        df_posicao_bin = df_posicao_bin.rename(columns={"Posição_no_depósito": "Posicao", "Tipo_de_depósito": "Tipo_de_depósito", "Qtd._Caixas_BIN_ABASTECIMENTO": "Quantidade_Bin"})
-        df_tipo_bin = df_tipo_bin.rename(columns={"Tipo": "Tipo", "Volume_(L)": "Volume_max_L"})
+        # --- Normalizações ---
+        df_posicoes_prod.rename(columns={"Posição no depósito": "Posicao", "Tipo de depósito": "Tipo_de_depósito"}, inplace=True)
+        df_posicao_bin.rename(columns={"Posição_no_depósito": "Posicao", "Tipo_de_depósito": "Tipo_de_depósito", "Qtd._Caixas_BIN_ABASTECIMENTO": "Quantidade_Bin"}, inplace=True)
+        df_tipo_bin.rename(columns={"Volume_(L)": "Volume_max_L"}, inplace=True)
 
-        df_tipo_bin["Tipo"] = df_tipo_bin["Tipo"].astype(str).str.strip()
-        df_posicao_bin["Tipo"] = df_posicao_bin["Tipo"].astype(str).str.strip()
         df_posicao_bin["Tipo_de_depósito"] = df_posicao_bin["Tipo_de_depósito"].astype(str).str.zfill(4).str.strip()
         df_posicoes_prod["Tipo_de_depósito"] = df_posicoes_prod["Tipo_de_depósito"].astype(str).str.zfill(4).str.strip()
         df_tipo_bin["Volume_max_L"] = pd.to_numeric(df_tipo_bin["Volume_max_L"], errors="coerce").fillna(0)
@@ -99,14 +98,12 @@ if arquivo:
         df_posicoes_prod = df_posicoes_prod.merge(df_posicao_bin, on=["Posicao", "Tipo_de_depósito"], how="left")
         df_posicoes_prod = df_posicoes_prod.merge(df_tipo_bin, on="Tipo", how="left")
 
-        # --- Cálculo das bins ---
+        # --- Cálculo das Bins ---
         resultado = []
         for _, row in df_base.iterrows():
-            produto = row["Produto"]
-            estrutura = row["Tipo_de_depósito"]
-            loja = row["Recebedor mercadoria"]
-            volume_unitario = row["Volume unitário (L)"]
-            qtd = row["Qtd.solicitada total"]
+            produto, estrutura, loja = row["Produto"], row["Tipo_de_depósito"], row["Recebedor mercadoria"]
+            volume_unitario, qtd = row["Volume unitário (L)"], row["Qtd.solicitada total"]
+            volume_total = volume_unitario * qtd
 
             posicoes = df_posicoes_prod[(df_posicoes_prod["Produto"] == produto) & (df_posicoes_prod["Tipo_de_depósito"] == estrutura)]
 
@@ -116,173 +113,118 @@ if arquivo:
                     "Posicao": "N/A", "Tipo_Bin": "N/A",
                     "Bins_Necessarias": "Erro: Produto sem posição",
                     "Bins_Disponiveis": "-", "Diferença": "-",
-                    "Quantidade_Total": "-", "Volume_Total": "-", "Volumetria_Máxima": "-"
+                    "Quantidade Total": "-", "Volume Total": "-", "Volumetria Máxima": "-"
                 })
                 continue
 
-            volume_total = volume_unitario * qtd
             for _, pos in posicoes.iterrows():
-                posicao = pos.get("Posicao", "N/A")
-                tipo_bin = pos.get("Tipo", "N/A")
                 volume_max = pos.get("Volume_max_L", 1)
-
                 if pd.isna(volume_max) or volume_max <= 0:
                     resultado.append({
                         "Produto": produto, "Recebedor": loja, "Estrutura": estrutura,
-                        "Posicao": posicao, "Tipo_Bin": tipo_bin,
+                        "Posicao": pos.get("Posicao", "N/A"), "Tipo_Bin": pos.get("Tipo", "N/A"),
                         "Bins_Necessarias": "Erro: Bin sem volume",
                         "Bins_Disponiveis": pos.get("Quantidade_Bin", 0), "Diferença": "-",
-                        "Quantidade_Total": "-", "Volume_Total": "-", "Volumetria_Máxima": "-"
+                        "Quantidade Total": "-", "Volume Total": "-", "Volumetria Máxima": "-"
                     })
                     continue
 
                 bins_necessarias = int(-(-volume_total // volume_max))
                 bins_disponiveis = int(pos.get("Quantidade_Bin", 0))
                 diferenca = bins_disponiveis - bins_necessarias
-                quantidade_total = min(bins_necessarias * qtd, qtd)
+                quantidade_total = qtd
                 volume_total_bins = quantidade_total * volume_unitario
                 volumetria_maxima = bins_disponiveis * volume_max
 
                 resultado.append({
                     "Produto": produto, "Recebedor": loja, "Estrutura": estrutura,
-                    "Posicao": posicao, "Tipo_Bin": tipo_bin,
+                    "Posicao": pos.get("Posicao", "N/A"), "Tipo_Bin": pos.get("Tipo", "N/A"),
                     "Bins_Necessarias": bins_necessarias,
                     "Bins_Disponiveis": bins_disponiveis,
                     "Diferença": diferenca,
-                    "Quantidade_Total": quantidade_total,
-                    "Volume_Total": round(volume_total_bins, 2),
-                    "Volumetria_Máxima": round(volumetria_maxima, 2)
+                    "Quantidade Total": quantidade_total,
+                    "Volume Total": round(volume_total_bins, 2),
+                    "Volumetria Máxima": round(volumetria_maxima, 2)
                 })
                 contador_sucesso += 1
 
         df_resultado = pd.DataFrame(resultado)
 
-        # --- Relatórios e exibição ---
         # --- Relatório Resumo por Produto e Estrutura ---
         df_resumo = df_resultado.merge(
             df_posicao_bin[["Posicao", "Tipo_de_depósito", "Estrutura"]].drop_duplicates(),
-            how="left",
-            left_on=["Posicao", "Estrutura"],
-            right_on=["Posicao", "Tipo_de_depósito"]
+            how="left", left_on=["Posicao", "Estrutura"], right_on=["Posicao", "Tipo_de_depósito"]
         )
-
         df_resumo = df_resumo.merge(
             df_posicoes_prod[["Produto", "Descrição breve do produto"]].drop_duplicates(),
-            on="Produto",
-            how="left"
+            on="Produto", how="left"
         )
 
         df_resumo = df_resumo[[
-            "Estrutura_x",
-            "Estrutura_y",
-            "Posicao",
-            "Produto",
-            "Descrição breve do produto",
-            "Tipo_Bin",
-            "Bins_Necessarias",
-            "Bins_Disponiveis",
-            "Diferença",
-            "Quantidade_Total",
-            "Volume_Total",
-            "Volumetria_Máxima"
+            "Estrutura_x", "Estrutura_y", "Posicao", "Produto",
+            "Descrição breve do produto", "Tipo_Bin", "Bins_Necessarias",
+            "Bins_Disponiveis", "Diferença", "Quantidade Total",
+            "Volume Total", "Volumetria Máxima"
         ]]
 
         df_resumo.columns = [
-            "Estrutura",
-            "Descrição - estrutura",
-            "Posição",
-            "Produto",
-            "Descrição – produto",
-            "Tipo_Bin",
-            "Bins_Necessarias",
-            "Bins_Disponiveis",
-            "Diferença",
-            "Quantidade Total",
-            "Volume Total",
-            "Volumetria Máxima"
+            "Estrutura", "Descrição - estrutura", "Posição", "Produto",
+            "Descrição – produto", "Tipo_Bin", "Bins_Necessarias",
+            "Bins_Disponiveis", "Diferença", "Quantidade Total",
+            "Volume Total", "Volumetria Máxima"
         ]
 
-        # --- Exibe e download Detalhado ---
-        st.subheader("📊 Detalhado por Loja, Estrutura e Produto")
-        st.dataframe(df_resultado)
+        # --- Resumos Posições Não Atendem e OK ---
+        df_resumo["Diferença"] = pd.to_numeric(df_resumo["Diferença"], errors='coerce')
 
-        buffer = io.BytesIO()
-        with pd.ExcelWriter(buffer, engine="xlsxwriter") as writer:
-            df_resultado.to_excel(writer, sheet_name="Detalhado Bins", index=False)
+        resumo_nao_atendem = df_resumo[df_resumo["Diferença"] < 0].groupby("Descrição - estrutura")["Posição"].nunique().reset_index(name="Posições - Não Atendem")
+        resumo_ok = df_resumo[df_resumo["Diferença"] >= 0].groupby("Descrição - estrutura")["Posição"].nunique().reset_index(name="Posições - OK")
 
-        st.download_button(
-            label="📥 Baixar Relatório Excel",
-            data=buffer.getvalue(),
-            file_name="Simulacao_Bins.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
+        total_nao_atendem = resumo_nao_atendem["Posições - Não Atendem"].sum()
+        total_ok = resumo_ok["Posições - OK"].sum()
 
-        st.markdown("---")
-
-        # --- Exibe e download Resumo por Produto e Estrutura ---
-        st.subheader("📊 Resumo por Produto e Estrutura")
-        st.dataframe(df_resumo)
-
-        buffer_resumo = io.BytesIO()
-        with pd.ExcelWriter(buffer_resumo, engine="xlsxwriter") as writer:
-            df_resumo.to_excel(writer, sheet_name="Resumo Produto Estrutura", index=False)
-
-        st.download_button(
-            label="📥 Baixar Resumo Produto/Estrutura",
-            data=buffer_resumo.getvalue(),
-            file_name="Resumo_Produto_Estrutura.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
-
-        # --- Calcula Resumo - Posições Não Atendem ---
-        df_nao_atendem = df_resumo[df_resumo["Diferença"].apply(lambda x: pd.to_numeric(x, errors='coerce')).lt(0, fill_value=False)]
-        resumo_nao_atendem = (
-            df_nao_atendem.groupby("Descrição - estrutura")["Posição"]
-            .nunique()
-            .reset_index(name="Posições - Não Atendem")
-        )
-        total_geral_nao_atendem = resumo_nao_atendem["Posições - Não Atendem"].sum()
-
-        # --- Calcula Resumo - Posições OK ---
-        df_ok = df_resumo[df_resumo["Diferença"].apply(lambda x: pd.to_numeric(x, errors='coerce')).ge(0, fill_value=False)]
-        resumo_ok = (
-            df_ok.groupby("Descrição - estrutura")["Posição"]
-            .nunique()
-            .reset_index(name="Posições - OK")
-        )
-        total_geral_ok = resumo_ok["Posições - OK"].sum()
-
-        # --- Exibe os dois resumos lado a lado ---
+        # --- Exibe os resumos lado a lado ---
         col1, col2 = st.columns(2)
-
         with col1:
             st.subheader("🚨 Resumo - Posições Não Atendem")
             st.dataframe(resumo_nao_atendem, use_container_width=True)
-            st.write(f"**Total Geral: {total_geral_nao_atendem} posições**")
-
+            st.write(f"**Total Geral: {total_nao_atendem} posições**")
         with col2:
             st.subheader("✅ Resumo - Posições OK")
             st.dataframe(resumo_ok, use_container_width=True)
-            st.write(f"**Total Geral: {total_geral_ok} posições**")
+            st.write(f"**Total Geral: {total_ok} posições**")
+
+        # --- Exibe relatórios detalhados ---
+        st.markdown("---")
+        st.subheader("📊 Detalhado por Loja, Estrutura e Produto")
+        st.dataframe(df_resultado)
 
         st.markdown("---")
-        st.success("✅ Simulação concluída com sucesso!")
+        st.subheader("📊 Resumo por Produto e Estrutura")
+        st.dataframe(df_resumo)
 
-        # --- Tempo total da simulação ---
-        tempo_total = time.time() - inicio_tempo
-        tempo_formatado = str(datetime.timedelta(seconds=int(tempo_total)))
+        # --- Download Detalhado ---
+        buf1 = io.BytesIO()
+        with pd.ExcelWriter(buf1, engine="xlsxwriter") as writer:
+            df_resultado.to_excel(writer, index=False, sheet_name="Detalhado Bins")
+        st.download_button("📥 Baixar Detalhado", data=buf1.getvalue(), file_name="Simulacao_Bins.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
-        st.success("✅ Simulação concluída com sucesso!")
-        st.write(f"⏱️ Tempo total da simulação: **{tempo_formatado}**")
-        st.write(f"📄 Total de linhas da base: **{total_linhas_base}**")
-        st.write(f"✔️ Linhas simuladas sem erro: **{contador_sucesso}**")
+        # --- Download Resumo ---
+        buf2 = io.BytesIO()
+        with pd.ExcelWriter(buf2, engine="xlsxwriter") as writer:
+            df_resumo.to_excel(writer, index=False, sheet_name="Resumo Produto Estrutura")
+        st.download_button("📥 Baixar Resumo Produto/Estrutura", data=buf2.getvalue(), file_name="Resumo_Produto_Estrutura.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
+        # --- Tempo Execução ---
+        tempo_execucao = str(datetime.timedelta(seconds=int(time.time() - inicio_tempo)))
+        st.success(f"✅ Simulação concluída em {tempo_execucao}")
+        st.write(f"📄 Linhas da base: **{total_linhas_base}**, Simuladas sem erro: **{contador_sucesso}**")
 
     except Exception as e:
         st.error(f"Erro no processamento: {e}")
 
-# --- Rodapé ---
-st.markdown("---")
+# Rodapé (igual antes)
+t.markdown("---")
 st.markdown("""
 <style>
 .author {
