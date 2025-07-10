@@ -165,7 +165,8 @@ if arquivo:
         )
 
         df_resumo = df_resumo[[
-            "Estrutura",                # Descrição da estrutura
+            "Estrutura_Codigo",                # Código da estrutura
+            "Descricao breve do produto",      # Descrição do produto
             "Posicao",
             "Produto",
             "Tipo_Bin",
