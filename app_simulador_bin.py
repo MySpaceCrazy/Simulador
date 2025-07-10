@@ -113,7 +113,7 @@ if arquivo:
                     "Posicao": "N/A", "Tipo_Bin": "N/A",
                     "Bins_Necessarias": "Erro: Produto sem posicao",
                     "Bins_Disponiveis": "-", "Diferença": "-",
-                    "Quantidade Total": "-", "Volume Total": "-", "Volumetria Máxima": "-"
+                    "Quantidade_Total": "-", "Volume_Total": "-", "Volumetria_Máxima": "-"
                 })
                 continue
 
@@ -125,7 +125,7 @@ if arquivo:
                         "Posicao": pos.get("Posicao", "N/A"), "Tipo_Bin": pos.get("Tipo", "N/A"),
                         "Bins_Necessarias": "Erro: Bin sem volume",
                         "Bins_Disponiveis": pos.get("Quantidade_Bin", 0), "Diferença": "-",
-                        "Quantidade Total": "-", "Volume Total": "-", "Volumetria Máxima": "-"
+                        "Quantidade_Total": "-", "Volume_Total": "-", "Volumetria_Máxima": "-"
                     })
                     continue
 
@@ -142,9 +142,9 @@ if arquivo:
                     "Bins_Necessarias": bins_necessarias,
                     "Bins_Disponiveis": bins_disponiveis,
                     "Diferença": diferenca,
-                    "Quantidade Total": quantidade_total,
-                    "Volume Total": round(volume_total_bins, 2),
-                    "Volumetria Máxima": round(volumetria_maxima, 2)
+                    "Quantidade_Total": quantidade_total,
+                    "Volume_Total": round(volume_total_bins, 2),
+                    "Volumetria_Máxima": round(volumetria_maxima, 2)
                 })
                 contador_sucesso += 1
 
@@ -172,9 +172,9 @@ if arquivo:
             "Bins_Necessarias",
             "Bins_Disponiveis",
             "Diferença",
-            "Quantidade_Total",
-            "Volume_Total",
-            "Volumetria_Máxima"
+            "Quantidade Total",
+            "Volume Total",
+            "Volumetria Máxima"
         ]]
 
         df_resumo = df_resumo.rename(columns={"Estrutura": "Descrição - estrutura"})
