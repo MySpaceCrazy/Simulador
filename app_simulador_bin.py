@@ -224,7 +224,7 @@ if arquivo:
         st.error(f"Erro no processamento: {e}")
 
 # Rodapé (igual antes)
-t.markdown("---")
+st.markdown("---")
 st.markdown("""
 <style>
 .author {
