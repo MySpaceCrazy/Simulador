@@ -169,7 +169,13 @@ if arquivo:
             "Descricao breve do produto": "Descrição – produto",
             "Quantidade_Total": "Quantidade Total",
             "Volume_Total": "Volume Total",
-            "Volumetria_Máxima": "Volumetria Máxima"
+            "Volumetria_Máxima": "Volumetria Máxima",
+            "Estrutura_Codigo": "Estrutura_Codigo",
+            "Estrutura": "Descrição - estrutura",
+            "Tipo_Bin": "Tipo_Bin",
+            "Bins_Necessarias": "Bins_Necessarias",
+            "Bins_Disponiveis": "Bins_Disponiveis",
+            "Diferença": "Diferença"
         })
 
         df_resumo = df_resumo[[
@@ -185,6 +191,7 @@ if arquivo:
             "Quantidade Total",
             "Volume Total",
             "Volumetria Máxima"
+
         ]]
 
         # --- Resumos Posições Não Atendem e OK ---
