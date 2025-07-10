@@ -172,18 +172,18 @@ if arquivo:
             "Bins_Necessarias",
             "Bins_Disponiveis",
             "Diferença",
-            "Quantidade Total",
-            "Volume Total",
-            "Volumetria Máxima"
+            "Quantidade_Total",
+            "Volume_Total",
+            "Volumetria_Máxima"
         ]]
 
         df_resumo = df_resumo.rename(columns={"Estrutura": "Descrição - estrutura"})
 
         df_resumo.columns = [
-            "Estrutura", "Descrição - estrutura", "Posição", "Produto",
+            "Estrutura_Codigo", "Descrição - estrutura", "Posição", "Produto",
             "Descrição – produto", "Tipo_Bin", "Bins_Necessarias",
-            "Bins_Disponiveis", "Diferença", "Quantidade Total",
-            "Volume Total", "Volumetria Máxima"
+            "Bins_Disponiveis", "Diferença", "Quantidade_Total",
+            "Volume_Total", "Volumetria_Máxima"
         ]
 
         # --- Resumos Posições Não Atendem e OK ---
