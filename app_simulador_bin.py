@@ -164,39 +164,29 @@ if arquivo:
             on="Produto", how="left"
         )
 
+        df_resumo = df_resumo.rename(columns={
+            "Posicao": "Posição",
+            "Descricao breve do produto": "Descrição – produto",
+            "Quantidade_Total": "Quantidade Total",
+            "Volume_Total": "Volume Total",
+            "Volumetria_Máxima": "Volumetria Máxima"
+        })
+
+        # Agora seleciona as colunas na ordem certa e já com os nomes corretos:
         df_resumo = df_resumo[[
-            "Estrutura_Codigo",                # Código da estrutura
-            "Descricao breve do produto",      # Descrição do produto
-            "Posicao",
+            "Estrutura_Codigo",
+            "Descrição - estrutura",
+            "Posição",
             "Produto",
+            "Descrição – produto",
             "Tipo_Bin",
             "Bins_Necessarias",
             "Bins_Disponiveis",
             "Diferença",
-            "Quantidade_Total",
-            "Volume_Total",
-            "Volumetria_Máxima"
+            "Quantidade Total",
+            "Volume Total",
+            "Volumetria Máxima"
         ]]
-
-        df_resumo = df_resumo.rename(columns={
-        "Posicao": "Posição",
-        "Produto": "Produto",
-        "Tipo_Bin": "Tipo_Bin",
-        "Bins_Necessarias": "Bins_Necessarias",
-        "Bins_Disponiveis": "Bins_Disponiveis",
-        "Diferença": "Diferença",
-        "Quantidade_Total": "Quantidade Total",
-        "Volume_Total": "Volume Total",
-        "Volumetria_Máxima": "Volumetria Máxima"
-})
-
-
-        df_resumo.columns = [
-            "Estrutura_Codigo", "Descrição - estrutura", "Posição", "Produto",
-            "Descrição – produto", "Tipo_Bin", "Bins_Necessarias",
-            "Bins_Disponiveis", "Diferença", "Quantidade_Total",
-            "Volume_Total", "Volumetria_Máxima"
-        ]
 
         # --- Resumos Posições Não Atendem e OK ---
         df_resumo["Diferença"] = pd.to_numeric(df_resumo["Diferença"], errors='coerce')
