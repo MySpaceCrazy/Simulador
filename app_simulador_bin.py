@@ -170,7 +170,7 @@ if arquivo:
             "Estrutura": "Descrição - estrutura"
         })
 
-        df_resumo = df_resumo[[
+        df_resumo = df_resumo[[  
             "Estrutura_Codigo",
             "Descrição - estrutura",
             "Posição",
@@ -180,10 +180,9 @@ if arquivo:
             "Bins_Necessarias",
             "Bins_Disponiveis",
             "Diferença",
-            "Quantidade Total",
-            "Volume Total",
-            "Volumetria Máxima"
-
+            "Quantidade_Total",
+            "Volume_Total",
+            "Volumetria_Máxima"
         ]]
 
         # --- Resumos Posições Não Atendem e OK ---
