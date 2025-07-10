@@ -160,7 +160,7 @@ if arquivo:
         )
 
         df_resumo = df_resumo.merge(
-            df_posicoes_prod[["Produto", "Descrição breve do produto"]].drop_duplicates(),
+            df_posicoes_prod[["Produto", "Descricao breve do produto"]].drop_duplicates(),
             on="Produto", how="left"
         )
 
