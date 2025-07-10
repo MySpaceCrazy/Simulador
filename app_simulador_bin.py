@@ -57,8 +57,8 @@ if arquivo:
         total_linhas_base = len(df_base)
         contador_sucesso = 0
 
-        colunas_base = ["Produto", "Qtd.solicitada total", "Recebedor mercadoria", "Peso", "UM peso", "Volume", "UM volume", "Área de atividade"]
-        colunas_pos = ["Posição no depósito", "Tipo de depósito", "Área armazmto", "Produto"]
+        colunas_base = ["Produto", "Qtd.solicitada total", "Recebedor mercadoria", "Peso", "UM peso", "Volume", "UM volume", "Area de atividade"]
+        colunas_pos = ["Posicao no deposito", "Tipo de deposito", "Area armazmto", "Produto"]
 
         for col in colunas_base:
             if col not in df_base.columns:
@@ -71,13 +71,13 @@ if arquivo:
 
         # --- Ajustes Base ---
         df_base["Recebedor mercadoria"] = df_base["Recebedor mercadoria"].astype(str).str.zfill(5)
-        df_base["Tipo_de_depósito"] = df_base["Área de atividade"].astype(str).str[:2].str.zfill(4)
+        df_base["Tipo_de_deposito"] = df_base["Area de atividade"].astype(str).str[:2].str.zfill(4)
         df_base["Peso"] = pd.to_numeric(df_base["Peso"], errors="coerce").fillna(0)
         df_base["Volume"] = pd.to_numeric(df_base["Volume"], errors="coerce").fillna(0)
         df_base["Qtd.solicitada total"] = pd.to_numeric(df_base["Qtd.solicitada total"], errors="coerce").fillna(1)
         df_base.loc[df_base["UM peso"] == "G", "Peso"] /= 1000
         df_base.loc[df_base["UM volume"] == "ML", "Volume"] /= 1000
-        df_base["Volume unitário (L)"] = df_base["Volume"] / df_base["Qtd.solicitada total"]
+        df_base["Volume unitario (L)"] = df_base["Volume"] / df_base["Qtd.solicitada total"]
 
         # --- Lê Tabelas Banco ---
         conn = sqlite3.connect("logistica.db")
@@ -86,32 +86,32 @@ if arquivo:
         conn.close()
 
         # --- Normalizações ---
-        df_posicoes_prod.rename(columns={"Posição no depósito": "Posicao", "Tipo de depósito": "Tipo_de_depósito"}, inplace=True)
-        df_posicao_bin.rename(columns={"Posição_no_depósito": "Posicao", "Tipo_de_depósito": "Tipo_de_depósito", "Qtd._Caixas_BIN_ABASTECIMENTO": "Quantidade_Bin"}, inplace=True)
+        df_posicoes_prod.rename(columns={"Posicao no deposito": "Posicao", "Tipo de deposito": "Tipo_de_deposito"}, inplace=True)
+        df_posicao_bin.rename(columns={"Posição_nodeposito": "Posicao", "Tipo_de_deposito": "Tipo_de_deposito", "Qtd._Caixas_BIN_ABASTECIMENTO": "Quantidade_Bin"}, inplace=True)
         df_tipo_bin.rename(columns={"Volume_(L)": "Volume_max_L"}, inplace=True)
 
-        df_posicao_bin["Tipo_de_depósito"] = df_posicao_bin["Tipo_de_depósito"].astype(str).str.zfill(4).str.strip()
-        df_posicoes_prod["Tipo_de_depósito"] = df_posicoes_prod["Tipo_de_depósito"].astype(str).str.zfill(4).str.strip()
+        df_posicao_bin["Tipo_de_deposito"] = df_posicao_bin["Tipo_de_deposito"].astype(str).str.zfill(4).str.strip()
+        df_posicoes_prod["Tipo_de_deposito"] = df_posicoes_prod["Tipo_de_deposito"].astype(str).str.zfill(4).str.strip()
         df_tipo_bin["Volume_max_L"] = pd.to_numeric(df_tipo_bin["Volume_max_L"], errors="coerce").fillna(0)
 
         # --- Joins ---
-        df_posicoes_prod = df_posicoes_prod.merge(df_posicao_bin, on=["Posicao", "Tipo_de_depósito"], how="left")
+        df_posicoes_prod = df_posicoes_prod.merge(df_posicao_bin, on=["Posicao", "Tipo_de_deposito"], how="left")
         df_posicoes_prod = df_posicoes_prod.merge(df_tipo_bin, on="Tipo", how="left")
 
         # --- Cálculo das Bins ---
         resultado = []
         for _, row in df_base.iterrows():
-            produto, estrutura, loja = row["Produto"], row["Tipo_de_depósito"], row["Recebedor mercadoria"]
-            volume_unitario, qtd = row["Volume unitário (L)"], row["Qtd.solicitada total"]
+            produto, estrutura, loja = row["Produto"], row["Tipo_de_deposito"], row["Recebedor mercadoria"]
+            volume_unitario, qtd = row["Volume unitario (L)"], row["Qtd.solicitada total"]
             volume_total = volume_unitario * qtd
 
-            posicoes = df_posicoes_prod[(df_posicoes_prod["Produto"] == produto) & (df_posicoes_prod["Tipo_de_depósito"] == estrutura)]
+            posicoes = df_posicoes_prod[(df_posicoes_prod["Produto"] == produto) & (df_posicoes_prod["Tipo_de_deposito"] == estrutura)]
 
             if posicoes.empty:
                 resultado.append({
                     "Produto": produto, "Recebedor": loja, "Estrutura": estrutura,
                     "Posicao": "N/A", "Tipo_Bin": "N/A",
-                    "Bins_Necessarias": "Erro: Produto sem posição",
+                    "Bins_Necessarias": "Erro: Produto sem posicao",
                     "Bins_Disponiveis": "-", "Diferença": "-",
                     "Quantidade Total": "-", "Volume Total": "-", "Volumetria Máxima": "-"
                 })
@@ -153,7 +153,7 @@ if arquivo:
         # --- Relatório Resumo por Produto e Estrutura ---
 
         df_resumo = df_resultado.merge(
-        df_posicao_bin.rename(columns={"Tipo_de_depósito": "Estrutura_Codigo"})[["Posicao", "Estrutura_Codigo", "Estrutura"]],
+        df_posicao_bin.rename(columns={"Tipo_de_deposito": "Estrutura_Codigo"})[["Posicao", "Estrutura_Codigo", "Estrutura"]],
         how="left",
         left_on=["Posicao", "Estrutura"],
         right_on=["Posicao", "Estrutura_Codigo"]
