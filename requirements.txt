@@ -1,7 +1,12 @@
-streamlit
-pandas
-plotly
-openpyxl
-xlsxwriter
-xlrd
-pathlib
+# requirements.txt
+streamlit>=1.35
+pandas>=2.2
+plotly>=5.20
+openpyxl>=3.1
+xlsxwriter>=3.2
+xlrd>=2.0
+# se a versão do python for menor que a 3.4 aplicar o seguinte comando
+# pip install xlrd==1.2.0
+# no requirements.txt, adicione a seguinte linha
+# xlrd==1.2.0 # para compatibilidade com arquivos Excel antigos
+# pathlib >=1.0
