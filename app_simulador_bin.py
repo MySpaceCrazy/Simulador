@@ -172,7 +172,6 @@ if arquivo:
             "Volumetria_Máxima": "Volumetria Máxima"
         })
 
-        # Agora seleciona as colunas na ordem certa e já com os nomes corretos:
         df_resumo = df_resumo[[
             "Estrutura_Codigo",
             "Descrição - estrutura",
