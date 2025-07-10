@@ -87,7 +87,7 @@ if arquivo:
 
         # --- Normalizações ---
         df_posicoes_prod.rename(columns={"Posicao no deposito": "Posicao", "Tipo de deposito": "Tipo_de_deposito"}, inplace=True)
-        df_posicao_bin.rename(columns={"Posição_nodeposito": "Posicao", "Tipo_de_deposito": "Tipo_de_deposito", "Qtd._Caixas_BIN_ABASTECIMENTO": "Quantidade_Bin"}, inplace=True)
+        df_posicao_bin.rename(columns={"Posicao_no_deposito": "Posicao", "Tipo_de_deposito": "Tipo_de_deposito", "Qtd._Caixas_BIN_ABASTECIMENTO": "Quantidade_Bin"}, inplace=True)
         df_tipo_bin.rename(columns={"Volume_(L)": "Volume_max_L"}, inplace=True)
 
         df_posicao_bin["Tipo_de_deposito"] = df_posicao_bin["Tipo_de_deposito"].astype(str).str.zfill(4).str.strip()
