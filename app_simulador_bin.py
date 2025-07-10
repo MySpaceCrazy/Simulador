@@ -151,13 +151,12 @@ if arquivo:
         df_resultado = pd.DataFrame(resultado)
 
         # --- Relatório Resumo por Produto e Estrutura ---
-       
-        df_posicao_bin_corrigido = df_posicao_bin.rename(columns={"Tipo_de_depósito": "Estrutura"})
 
         df_resumo = df_resultado.merge(
-            df_posicao_bin_corrigido[["Posicao", "Estrutura"]].drop_duplicates(),
-            how="left",
-            on=["Posicao", "Estrutura"]
+        df_posicao_bin.rename(columns={"Tipo_de_depósito": "Estrutura_Codigo"})[["Posicao", "Estrutura_Codigo", "Estrutura"]],
+        how="left",
+        left_on=["Posicao", "Estrutura"],
+        right_on=["Posicao", "Estrutura_Codigo"]
         )
 
         df_resumo = df_resumo.merge(
@@ -166,11 +165,19 @@ if arquivo:
         )
 
         df_resumo = df_resumo[[
-            "Estrutura_x", "Estrutura_y", "Posicao", "Produto",
-            "Descrição breve do produto", "Tipo_Bin", "Bins_Necessarias",
-            "Bins_Disponiveis", "Diferença", "Quantidade Total",
-            "Volume Total", "Volumetria Máxima"
+            "Estrutura",                # Descrição da estrutura
+            "Posicao",
+            "Produto",
+            "Tipo_Bin",
+            "Bins_Necessarias",
+            "Bins_Disponiveis",
+            "Diferença",
+            "Quantidade_Total",
+            "Volume_Total",
+            "Volumetria_Máxima"
         ]]
+
+        df_resumo = df_resumo.rename(columns={"Estrutura": "Descrição - estrutura"})
 
         df_resumo.columns = [
             "Estrutura", "Descrição - estrutura", "Posição", "Produto",
