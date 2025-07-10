@@ -150,13 +150,17 @@ if arquivo:
 
         df_resultado = pd.DataFrame(resultado)
 
-        # --- Relatório Resumo por Produto e Estrutura ---
+        # --- Traz descrição da estrutura ---
+        df_estruturas = df_posicao_bin[["Tipo_de_deposito", "Estrutura"]].drop_duplicates().rename(
+            columns={"Tipo_de_deposito": "Estrutura_Codigo", "Estrutura": "Descrição - estrutura"}
+        )
 
+        # --- Relatório Resumo por Produto e Estrutura ---
         df_resumo = df_resultado.merge(
-        df_posicao_bin.rename(columns={"Tipo_de_deposito": "Estrutura_Codigo"})[["Posicao", "Estrutura_Codigo", "Estrutura"]],
-        how="left",
-        left_on=["Posicao", "Estrutura"],
-        right_on=["Posicao", "Estrutura_Codigo"]
+            df_estruturas,
+            how="left",
+            left_on="Estrutura",
+            right_on="Estrutura_Codigo"
         )
 
         df_resumo = df_resumo.merge(
@@ -166,8 +170,7 @@ if arquivo:
 
         df_resumo = df_resumo.rename(columns={
             "Posicao": "Posição",
-            "Descricao breve do produto": "Descrição – produto",
-            "Estrutura": "Descrição - estrutura"
+            "Descricao breve do produto": "Descrição – produto"
         })
 
         df_resumo = df_resumo[[  
@@ -214,13 +217,12 @@ if arquivo:
         st.subheader("📊 Resumo por Produto e Estrutura")
         st.dataframe(df_resumo)
 
-        # --- Download Detalhado ---
+        # --- Downloads ---
         buf1 = io.BytesIO()
         with pd.ExcelWriter(buf1, engine="xlsxwriter") as writer:
             df_resultado.to_excel(writer, index=False, sheet_name="Detalhado Bins")
         st.download_button("📥 Baixar Detalhado", data=buf1.getvalue(), file_name="Simulacao_Bins.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
-        # --- Download Resumo ---
         buf2 = io.BytesIO()
         with pd.ExcelWriter(buf2, engine="xlsxwriter") as writer:
             df_resumo.to_excel(writer, index=False, sheet_name="Resumo Produto Estrutura")
@@ -234,7 +236,7 @@ if arquivo:
     except Exception as e:
         st.error(f"Erro no processamento: {e}")
 
-# Rodapé (igual antes)
+# --- Rodapé ---
 st.markdown("---")
 st.markdown("""
 <style>
@@ -244,27 +246,21 @@ st.markdown("""
     background-color: #000000;
     color: white;
 }
-
 .author img {
     width: 120px;
     height: 120px;
     border-radius: 50%;
 }
-
 .author p {
     margin-top: 15px;
     font-size: 1rem;
 }
+.author-name {
+    font-weight: bold;
+    font-size: 1.4rem;
+    color: white;
+}
 </style>
-
-<style>
-    .author-name {
-        font-weight: bold;
-        font-size: 1.4rem;
-        color: white;
-    }
-</style>
-
 <div class="author">
     <img src="https://avatars.githubusercontent.com/u/90271653?v=4" alt="Autor">
     <div class="author-name">
@@ -279,7 +275,6 @@ st.markdown("""
             <img src="https://raw.githubusercontent.com/MySpaceCrazy/simulador_bin/refs/heads/main/Imagens/linkedin.ico" alt="LinkedIn" style="width: 32px; height: 32px;">
         </a>
     </div>
-            <p class="footer-text">© 2025 Ânderson Oliveira. Todos os direitos reservados.</p>
+    <p class="footer-text">© 2025 Ânderson Oliveira. Todos os direitos reservados.</p>
 </div>
 """, unsafe_allow_html=True)
-# --- Fim do rodapé ---
