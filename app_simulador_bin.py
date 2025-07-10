@@ -167,15 +167,7 @@ if arquivo:
         df_resumo = df_resumo.rename(columns={
             "Posicao": "Posição",
             "Descricao breve do produto": "Descrição – produto",
-            "Quantidade_Total": "Quantidade Total",
-            "Volume_Total": "Volume Total",
-            "Volumetria_Máxima": "Volumetria Máxima",
-            "Estrutura_Codigo": "Estrutura_Codigo",
-            "Estrutura": "Descrição - estrutura",
-            "Tipo_Bin": "Tipo_Bin",
-            "Bins_Necessarias": "Bins_Necessarias",
-            "Bins_Disponiveis": "Bins_Disponiveis",
-            "Diferença": "Diferença"
+            "Estrutura": "Descrição - estrutura"
         })
 
         df_resumo = df_resumo[[
