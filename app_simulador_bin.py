@@ -63,10 +63,12 @@ if "simulando" not in st.session_state:
 
 arquivo = st.file_uploader("📂 Selecionar arquivo de simulação (.xlsx)", type=["xlsx"])
 
+if st.session_state["simulando"]:
+    st.warning("⚠️ A simulação levará alguns minutos. Tempo médio estimado: 10 minutos a cada 200.000 linhas. Aguarde...")
+
+
 if arquivo:
-    if not st.session_state["simulando"]:
-        st.warning("⚠️ A simulação levará alguns minutos. Tempo médio estimado: 10 minutos a cada 200.000 linhas. Aguarde...")
-        st.session_state["simulando"] = True
+    st.session_state["simulando"] = True
 
     try:
         inicio_tempo = time.time()
