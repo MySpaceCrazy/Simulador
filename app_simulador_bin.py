@@ -54,7 +54,7 @@ st.markdown(
     '''
     <div style="display: flex; align-items: center;">
         <img src="https://raw.githubusercontent.com/MySpaceCrazy/Simulador_teste/refs/heads/main/imagens/CP-6423-01.ico" width="64" style="margin-right: 15px;">
-        <span style="font-size: 30px; font-weight: bold;">Simulador de Quantidade de Bins</span>
+        <span style="font-size: 60px; font-weight: bold;">Simulador de Quantidade de Bins</span>
     </div>
     ''',
     unsafe_allow_html=True
