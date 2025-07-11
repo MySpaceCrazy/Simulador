@@ -43,9 +43,10 @@ print("✅ Banco logistica.db atualizado com sucesso.")
 # --- Streamlit Config ---
 #st.set_page_config(page_title="Simulador de Bins de Picking", page_icon="📦", layout="wide")
 st.set_page_config(
-    page_title="Simulador de Separação de Produtos",
-    page_icon="https://raw.githubusercontent.com/MySpaceCrazy/Simulador_parting-line/refs/heads/main/pacotes.ico",
+    page_title="Simulador de Bins"
+    page_icon="https://raw.githubusercontent.com/MySpaceCrazy/Simulador_teste/refs/heads/main/imagens/CP-6423-01.ico",
     layout="wide"
+
 )
 
 st.title("📦 Simulador de Quantidade de Bins por Posição de Picking")
