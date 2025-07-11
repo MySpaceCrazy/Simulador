@@ -64,6 +64,8 @@ st.markdown(
 arquivo = st.file_uploader("📂 Selecionar arquivo de simulação (.xlsx)", type=["xlsx"])
 
 if arquivo:
+    st.warning("⚠️ A simulação levará alguns minutos. Tempo médio estimado: 10 minutos a cada 200.000 linhas. Aguarde...")
+    
     try:
         inicio_tempo = time.time()
 
