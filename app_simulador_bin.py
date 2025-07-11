@@ -60,7 +60,7 @@ st.markdown(
 # --- Upload Excel ---
 if "simulando" not in st.session_state:
     st.session_state["simulando"] = False
-
+    
 arquivo = st.file_uploader("📂 Selecionar arquivo de simulação (.xlsx)", type=["xlsx"])
 
 if st.session_state["simulando"]:
@@ -256,10 +256,12 @@ if arquivo:
         st.write(f"📄 Linhas da base: **{total_linhas_base}**, Simuladas sem erro: **{contador_sucesso}**")
 
         st.session_state["simulando"] = False
+        st.experimental_rerun()
 
     except Exception as e:
         st.session_state["simulando"] = False
         st.error(f"Erro no processamento: {e}")
+        st.experimental_rerun()
 
 # --- Rodapé ---
 st.markdown("---")
