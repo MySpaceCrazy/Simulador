@@ -58,10 +58,15 @@ st.markdown(
 )
 
 # --- Upload Excel ---
+if "simulando" not in st.session_state:
+    st.session_state["simulando"] = False
+
 arquivo = st.file_uploader("📂 Selecionar arquivo de simulação (.xlsx)", type=["xlsx"])
 
 if arquivo:
-    st.warning("⚠️ A simulação levará alguns minutos. Tempo médio estimado: 10 minutos a cada 200.000 linhas. Aguarde...")
+    if not st.session_state["simulando"]:
+        st.warning("⚠️ A simulação levará alguns minutos. Tempo médio estimado: 10 minutos a cada 200.000 linhas. Aguarde...")
+        st.session_state["simulando"] = True
 
     try:
         inicio_tempo = time.time()
@@ -248,7 +253,10 @@ if arquivo:
         st.success(f"✅ Simulação concluída em {tempo_execucao}")
         st.write(f"📄 Linhas da base: **{total_linhas_base}**, Simuladas sem erro: **{contador_sucesso}**")
 
+        st.session_state["simulando"] = False
+
     except Exception as e:
+        st.session_state["simulando"] = False
         st.error(f"Erro no processamento: {e}")
 
 # --- Rodapé ---
