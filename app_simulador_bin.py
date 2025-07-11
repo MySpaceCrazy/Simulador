@@ -49,7 +49,10 @@ st.set_page_config(
 
 )
 
-st.title("📦 Simulador de Quantidade de Bins por Posição de Picking")
+#st.title("📦 Simulador de Quantidade de Bins por Posição de Picking")
+st.title(f'<h3><img src="https://raw.githubusercontent.com/MySpaceCrazy/Simulador_teste/refs/heads/main/imagens/CP-6423-01.ico" width="24" style="vertical-align:middle;"> Simulador de Quantidade de Bins</h3>',
+        unsafe_allow_html=True
+)
 
 # --- Upload Excel ---
 arquivo = st.file_uploader("📂 Selecionar arquivo de simulação (.xlsx)", type=["xlsx"])
