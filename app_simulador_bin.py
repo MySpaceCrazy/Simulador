@@ -41,15 +41,12 @@ conn.close()
 print("✅ Banco logistica.db atualizado com sucesso.")
 
 # --- Streamlit Config ---
-#st.set_page_config(page_title="Simulador de Bins de Picking", page_icon="📦", layout="wide")
 st.set_page_config(
     page_title="Simulador de Bins",
     page_icon="https://raw.githubusercontent.com/MySpaceCrazy/Simulador_teste/refs/heads/main/imagens/CP-6423-01.ico",
     layout="wide"
 
 )
-
-#st.title("📦 Simulador de Quantidade de Bins por Posição de Picking")
 st.markdown(
     '''
     <div style="display: flex; align-items: center;">
@@ -65,7 +62,7 @@ arquivo = st.file_uploader("📂 Selecionar arquivo de simulação (.xlsx)", typ
 
 if arquivo:
     st.warning("⚠️ A simulação levará alguns minutos. Tempo médio estimado: 10 minutos a cada 200.000 linhas. Aguarde...")
-    
+
     try:
         inicio_tempo = time.time()
 
