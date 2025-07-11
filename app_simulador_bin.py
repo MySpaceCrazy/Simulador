@@ -51,7 +51,7 @@ st.set_page_config(
 
 #st.title("📦 Simulador de Quantidade de Bins por Posição de Picking")
 st.markdown(
-    f'<h3><img src="https://raw.githubusercontent.com/MySpaceCrazy/Simulador_teste/refs/heads/main/imagens/CP-6423-01.ico" width="24" style="vertical-align:middle;"> Simulador de Quantidade de Bins</h3>',
+    f'<h3><img src="https://raw.githubusercontent.com/MySpaceCrazy/Simulador_teste/refs/heads/main/imagens/CP-6423-01.ico" width="42" style="vertical-align:middle;"> Simulador de Quantidade de Bins</h3>',
     unsafe_allow_html=True
 )
 
