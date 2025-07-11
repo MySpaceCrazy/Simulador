@@ -17,11 +17,18 @@ conn = sqlite3.connect("logistica.db")
 for tabela, nome_arquivo in ARQUIVOS_CSV.items():
     caminho = os.path.join(PASTA_CSV, nome_arquivo)
     if os.path.exists(caminho):
-        print(f"🔄 Atualizando: {tabela}")
         try:
-            df = pd.read_csv(caminho, sep=";|,", engine="python", encoding="latin1")
-            df.columns = [c.strip().replace(" ", "_") for c in df.columns]  # Normaliza nomes de coluna
+            df = pd.read_csv(caminho, sep=";", encoding="latin1")
+            df.columns = [c.strip().replace(" ", "_") for c in df.columns]
+
+            if tabela == "info_tipo_bin" and "Volume_(L)" in df.columns:
+                df["Volume_(L)"] = pd.to_numeric(
+                    df["Volume_(L)"].astype(str).str.replace(",", ".", regex=False),
+                    errors="coerce"
+                ).fillna(0)
+
             df.to_sql(tabela, conn, if_exists="replace", index=False)
+            print(f"🔄 Atualizado: {tabela}")
         except Exception as e:
             print(f"❌ Erro ao processar {nome_arquivo}: {e}")
     else:
